@@ -1,0 +1,21 @@
+{
+  "name": "NudGoo — let's meet up",
+  "short_name": "NudGoo",
+  "description": "Plans, polls & group chaos — sorted. Group chat, trip voting, bill splitting and games for your gang.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8f9fa",
+  "theme_color": "#3b5bdb",
+  "categories": ["social", "lifestyle", "travel"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

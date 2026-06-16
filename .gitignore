@@ -1,0 +1,47 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+Thumbs.db
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# local env files
+.env
+.env*.local
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# vercel
+.vercel
+
+# editor
+.idea
+.vscode/*
+!.vscode/extensions.json
+
+# Claude Code — share project config (launch.json, settings.json),
+# but keep per-developer local settings out of the repo.
+.claude/settings.local.json
+.claude/*.local.json
+
+# test / coverage output
+/coverage

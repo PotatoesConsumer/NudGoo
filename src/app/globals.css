@@ -1,0 +1,168 @@
+/*
+ * NudGoo — design tokens & base styles.
+ * Ported verbatim from the NudGoo.dc.html design handoff so the app matches
+ * the mockup pixel-for-pixel. Colors, fonts, animations and the phone frame
+ * are all taken straight from the source `:root` and wrapper.
+ */
+
+:root {
+  --primary: #3b5bdb;
+  --primary-deep: #2f4ac2;
+  --primary-light: #748ffc;
+  --primary-surface: #eef2ff;
+  --primary-muted: #bac8ff;
+  --profit: #2f9e44;
+  --profit-surface: #ebfbee;
+  --profit-deep: #1e6b2e;
+  --profit-light: #b2f2bb;
+  --error: #c92a2a;
+  --error-bg: #ffe3e3;
+  --warning: #e67700;
+  --warning-bg: #fff3bf;
+  --canvas: #ffffff;
+  --surface: #f8f9fa;
+  --surface-card: #ffffff;
+  --surface-raised: #f1f3f5;
+  --surface-overlay: #e9ecef;
+  --surface-dark: #1a1b1e;
+  --ink: #212529;
+  --ink-secondary: #495057;
+  --ink-tertiary: #868e96;
+  --ink-disabled: #ced4da;
+  --hairline: #dee2e6;
+  --hairline-soft: #e9ecef;
+  --hairline-strong: #ced4da;
+  --rank-1: #f59f00;
+  --rank-2: #868e96;
+  --rank-3: #cd7f32;
+  --rank-other: #adb5bd;
+  --play: #e8590c;
+  --play-surface: #fff4e6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Sarabun", "Noto Sans Thai", sans-serif;
+  color: var(--ink);
+  background: #c9cdd3;
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+@keyframes popIn {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes slideUp {
+  from {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes toastIn {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes rollSpin {
+  0% {
+    transform: rotate(0) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.15);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+.scroll-area {
+  scrollbar-width: none;
+}
+.scroll-area::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* ── Phone-frame mockup ──────────────────────────────────────────────────
+ * On wide screens we render the exact 393×852 device frame from the design.
+ * On small screens (real phones / PWA) the app fills the viewport. */
+.ng-stage {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  background: #c9cdd3;
+}
+.ng-bezel {
+  width: 393px;
+  height: 852px;
+  flex: 0 0 auto;
+  background: #000;
+  border-radius: 54px;
+  padding: 11px;
+  box-shadow:
+    0 40px 90px rgba(0, 0, 0, 0.4),
+    0 0 0 2px rgba(255, 255, 255, 0.06) inset;
+  position: relative;
+}
+.ng-screen {
+  width: 100%;
+  height: 100%;
+  background: var(--surface);
+  border-radius: 44px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+@media (max-width: 480px), (max-height: 900px) {
+  .ng-stage {
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+  .ng-bezel {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+  .ng-screen {
+    border-radius: 0;
+  }
+}
