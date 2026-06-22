@@ -40,9 +40,9 @@ export function TopBar({ v }: { v: VM }) {
           <button onClick={v.openChatInfo} aria-label="chat info" style={css("flex:0 0 40px;width:40px;height:40px;border-radius:12px;border:0;background:var(--surface-raised);display:flex;align-items:center;justify-content:center;cursor:pointer")}><i className="ph ph-magnifying-glass" style={css("font-size:19px;color:var(--ink-secondary)")} /></button>
         </>
       )}
-      <button style={css("flex:0 0 40px;width:40px;height:40px;border-radius:12px;border:0;background:var(--surface-raised);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative")}>
+      <button onClick={v.openNotifs} aria-label="notifications" style={css("flex:0 0 40px;width:40px;height:40px;border-radius:12px;border:0;background:var(--surface-raised);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative")}>
         <i className="ph-fill ph-bell" style={css("font-size:19px;color:var(--ink-secondary)")} />
-        <span style={css("position:absolute;top:9px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--error);border:1.5px solid var(--surface-raised)")} />
+        {v.hasNotifs && <span style={css("position:absolute;top:9px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--error);border:1.5px solid var(--surface-raised)")} />}
       </button>
       <button onClick={v.openProfile} aria-label="profile" style={css(`flex:0 0 38px;width:38px;height:38px;border-radius:50%;border:${v.avatarBtnRing};background:${v.meColor};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-family:Inter,sans-serif;font-size:15px;cursor:pointer;padding:0`)}>{v.meGlyph}</button>
     </div>

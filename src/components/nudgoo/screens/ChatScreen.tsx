@@ -1,3 +1,5 @@
+import { useRef } from "react";
+
 import { css } from "@/lib/nudgoo/css";
 import type { VM } from "@/lib/nudgoo/viewModel";
 
@@ -21,7 +23,7 @@ function Bubble({ m }: { m: Msg }) {
         </div>
       )}
       {m.isLocation && (
-        <div style={css("width:230px;border-radius:16px;overflow:hidden;background:var(--surface-card);border:1px solid var(--hairline);box-shadow:0 1px 3px rgba(0,0,0,.1)")}>
+        <div onClick={() => m.locUrl && window.open(m.locUrl, "_blank")} style={css("width:230px;border-radius:16px;overflow:hidden;background:var(--surface-card);border:1px solid var(--hairline);box-shadow:0 1px 3px rgba(0,0,0,.1);cursor:pointer")}>
           <div style={css("height:120px;position:relative;background:linear-gradient(135deg,#A9D9B5,#7FC8A4)")}>
             <div style={css("position:absolute;inset:0;opacity:.5;background-image:linear-gradient(rgba(255,255,255,.55) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.55) 1px,transparent 1px);background-size:26px 26px")} />
             <div style={css("position:absolute;left:14px;top:50px;right:40px;height:7px;border-radius:9999px;background:#F4C95D;transform:rotate(-8deg);box-shadow:0 1px 2px rgba(0,0,0,.15)")} />
@@ -36,9 +38,13 @@ function Bubble({ m }: { m: Msg }) {
       )}
       {m.isPhotoActive && (
         <div style={css(`width:200px;height:140px;border-radius:16px;overflow:hidden;position:relative;background:${m.tint};box-shadow:0 1px 3px rgba(0,0,0,.12)`)}>
-          <div style={css("position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.22),rgba(0,0,0,.28));display:flex;align-items:center;justify-content:center")}>
-            <i className="ph-duotone ph-image" style={css("font-size:42px;color:rgba(255,255,255,.85)")} />
-          </div>
+          {m.imageUrl ? (
+            <img src={m.imageUrl} alt="photo" style={css("width:100%;height:100%;object-fit:cover;display:block")} />
+          ) : (
+            <div style={css("position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.22),rgba(0,0,0,.28));display:flex;align-items:center;justify-content:center")}>
+              <i className="ph-duotone ph-image" style={css("font-size:42px;color:rgba(255,255,255,.85)")} />
+            </div>
+          )}
           <div style={css("position:absolute;left:8px;bottom:8px;display:inline-flex;align-items:center;gap:5px;background:rgba(0,0,0,.62);color:#fff;font-size:11px;font-weight:700;padding:5px 9px;border-radius:9999px")}>
             <i className="ph-fill ph-timer" style={css("font-size:13px")} /> {m.countdown}
           </div>
@@ -51,8 +57,14 @@ function Bubble({ m }: { m: Msg }) {
         </div>
       )}
       {m.isGif && (
-        <div style={css(`width:170px;height:130px;border-radius:16px;overflow:hidden;position:relative;background:linear-gradient(135deg,${m.gifC1},${m.gifC2});box-shadow:0 1px 3px rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center`)}>
-          <span style={css("font-family:Inter,sans-serif;font-weight:800;font-size:22px;color:#fff;text-align:center;padding:0 10px;text-shadow:0 1px 6px rgba(0,0,0,.3);line-height:1.1")}>{m.gifLabel}</span>
+        <div style={css("width:170px;min-height:130px;border-radius:16px;overflow:hidden;position:relative;background:var(--surface-overlay);box-shadow:0 1px 3px rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center")}>
+          {m.gifUrl ? (
+            <img src={m.gifUrl} alt="gif" style={css("width:100%;height:auto;display:block")} />
+          ) : (
+            <div style={css(`width:100%;height:130px;background:linear-gradient(135deg,${m.gifC1},${m.gifC2});display:flex;align-items:center;justify-content:center`)}>
+              <span style={css("font-family:Inter,sans-serif;font-weight:800;font-size:22px;color:#fff;text-align:center;padding:0 10px;text-shadow:0 1px 6px rgba(0,0,0,.3);line-height:1.1")}>{m.gifLabel}</span>
+            </div>
+          )}
           <span style={css("position:absolute;left:7px;top:7px;background:rgba(0,0,0,.55);color:#fff;font-size:9px;font-weight:800;letter-spacing:.5px;padding:2px 6px;border-radius:5px;font-family:Inter,sans-serif")}>GIF</span>
         </div>
       )}
@@ -77,8 +89,16 @@ function Bubble({ m }: { m: Msg }) {
 }
 
 export function ChatScreen({ v }: { v: VM }) {
+  const photoRef = useRef<HTMLInputElement>(null);
   return (
     <div style={css("flex:1;display:flex;flex-direction:column;min-height:0;background:var(--surface);position:relative")}>
+      <input
+        ref={photoRef}
+        type="file"
+        accept="image/*"
+        style={{ display: "none" }}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) v.sendPhotoFile(f); e.currentTarget.value = ""; }}
+      />
       {v.hasMuted && (
         <div style={css("flex:0 0 auto;display:flex;align-items:center;gap:9px;padding:8px 14px;background:var(--error-bg);border-bottom:1px solid var(--hairline-soft)")}>
           <i className="ph-fill ph-microphone-slash" style={css("font-size:15px;color:var(--error)")} />
@@ -136,8 +156,8 @@ export function ChatScreen({ v }: { v: VM }) {
         <>
           <div onClick={v.toggleAttach} style={css("position:absolute;inset:0;z-index:14")} />
           <div style={css("position:absolute;left:12px;bottom:74px;z-index:15;background:var(--surface-card);border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.18);border:1px solid var(--hairline);overflow:hidden;width:190px;animation:slideUp .2s ease")}>
-            <button onClick={v.pickCamera} style={css("display:flex;align-items:center;gap:12px;width:100%;border:0;background:transparent;cursor:pointer;padding:13px 16px;border-bottom:1px solid var(--hairline-soft)")}><i className="ph-fill ph-camera" style={css("font-size:20px;color:var(--primary)")} /><span style={css("font-size:14px;font-weight:600;color:var(--ink);font-family:'Sarabun',sans-serif")}>Photo</span></button>
-            <button onClick={v.pickGif} style={css("display:flex;align-items:center;gap:12px;width:100%;border:0;background:transparent;cursor:pointer;padding:13px 16px;border-bottom:1px solid var(--hairline-soft)")}><span style={css("width:20px;text-align:center;font-family:Inter,sans-serif;font-weight:800;font-size:12px;color:var(--primary)")}>GIF</span><span style={css("font-size:14px;font-weight:600;color:var(--ink);font-family:'Sarabun',sans-serif")}>GIF</span></button>
+            <button onClick={() => { v.closeAttach(); photoRef.current?.click(); }} style={css("display:flex;align-items:center;gap:12px;width:100%;border:0;background:transparent;cursor:pointer;padding:13px 16px;border-bottom:1px solid var(--hairline-soft)")}><i className="ph-fill ph-camera" style={css("font-size:20px;color:var(--primary)")} /><span style={css("font-size:14px;font-weight:600;color:var(--ink);font-family:'Sarabun',sans-serif")}>Photo</span></button>
+            <button onClick={v.openGif} style={css("display:flex;align-items:center;gap:12px;width:100%;border:0;background:transparent;cursor:pointer;padding:13px 16px;border-bottom:1px solid var(--hairline-soft)")}><span style={css("width:20px;text-align:center;font-family:Inter,sans-serif;font-weight:800;font-size:12px;color:var(--primary)")}>GIF</span><span style={css("font-size:14px;font-weight:600;color:var(--ink);font-family:'Sarabun',sans-serif")}>GIF</span></button>
             <button onClick={v.pickLocation} style={css("display:flex;align-items:center;gap:12px;width:100%;border:0;background:transparent;cursor:pointer;padding:13px 16px;border-bottom:1px solid var(--hairline-soft)")}><i className="ph-fill ph-map-pin" style={css("font-size:20px;color:var(--primary)")} /><span style={css("font-size:14px;font-weight:600;color:var(--ink);font-family:'Sarabun',sans-serif")}>Location</span></button>
             <button onClick={v.pickPoll} style={css("display:flex;align-items:center;gap:12px;width:100%;border:0;background:transparent;cursor:pointer;padding:13px 16px")}><i className="ph-fill ph-chart-bar-horizontal" style={css("font-size:20px;color:var(--primary)")} /><span style={css("font-size:14px;font-weight:600;color:var(--ink);font-family:'Sarabun',sans-serif")}>Poll</span></button>
           </div>

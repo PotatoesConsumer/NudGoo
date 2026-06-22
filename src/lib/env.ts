@@ -15,6 +15,8 @@ export const env = {
   supabaseAnonKey: anonKey,
   siteUrl:
     process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "http://localhost:3000",
+  /** Optional GIPHY API key for the chat GIF search. Free at developers.giphy.com */
+  giphyKey: process.env.NEXT_PUBLIC_GIPHY_API_KEY?.trim() ?? "",
 } as const;
 
 /**

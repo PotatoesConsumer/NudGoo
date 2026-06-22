@@ -4,15 +4,28 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { PointerEvent } from "react";
 
 import { CARDS, CYCLE, FRIENDS, INITIAL_STATE, SM } from "./data";
-import type { ChatMsg, State } from "./types";
+import type { State } from "./types";
+import { useAuth } from "./useAuth";
+import { useChat } from "./useChat";
+import { useGroupData } from "./useGroupData";
 import { buildViewModel, type NudGooApi, type VM } from "./viewModel";
 
-const pad = (n: number) => String(n).padStart(2, "0");
-
 export function useNudGoo(): { state: State; vm: VM } {
+  const auth = useAuth();
+  const approved = auth.profile?.status === "approved";
+  const userId = auth.session?.user.id ?? null;
+  const group = useGroupData(approved, userId);
+  const chat = useChat(approved, userId);
   const [state, setStateRaw] = useState<State>(INITIAL_STATE);
   const stateRef = useRef(state);
   stateRef.current = state;
+
+  const authRef = useRef(auth);
+  authRef.current = auth;
+  const groupRef = useRef(group);
+  groupRef.current = group;
+  const chatRef = useRef(chat);
+  chatRef.current = chat;
 
   const setState = useCallback(
     (u: Partial<State> | ((p: State) => Partial<State>)) => {
@@ -26,7 +39,6 @@ export function useNudGoo(): { state: State; vm: VM } {
   const msgEl = useRef<HTMLDivElement | null>(null);
   const inpEl = useRef<HTMLInputElement | null>(null);
   const evId = useRef<string>("bowling");
-  const stick = useRef(false);
   const lpTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wheelTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -44,6 +56,69 @@ export function useNudGoo(): { state: State; vm: VM } {
     [setState],
   );
 
+  // ── Drive the screen from real auth state ──────────────────────────────────
+  // We only force a screen change when the auth "signature" changes (sign in /
+  // out, membership status, or whether the group has a founder yet) so the user
+  // can still navigate freely within a given state (e.g. onboard ↔ waiting).
+  const authSigRef = useRef<string>("");
+  useEffect(() => {
+    if (!auth.ready) return;
+    const sig = !auth.session
+      ? "out"
+      : !auth.profile
+        ? "loading"
+        : `${auth.profile.status}:${auth.profile.status === "pending" ? auth.groupClaimed : ""}`;
+    if (sig === authSigRef.current) return;
+    authSigRef.current = sig;
+
+    if (!auth.session) {
+      setState({ screen: "auth", account: "approved", authUser: "", authPass: "", authName: "" });
+      return;
+    }
+    if (!auth.profile) return; // session present, profile still loading
+
+    const st = auth.profile.status;
+    if (st === "approved") {
+      setState({ screen: "app", account: "approved", tab: "calendar", sheet: null });
+    } else if (st === "rejected") {
+      setState({ screen: "waiting", account: "rejected" });
+    } else if (auth.groupClaimed === false) {
+      setState({ screen: "onboard", account: "pending", onboardStep: "choose" });
+    } else {
+      setState({ screen: "waiting", account: "pending" });
+    }
+  }, [auth.ready, auth.session, auth.profile, auth.groupClaimed, setState]);
+
+  // ── Persist UI preferences (theme + language) across sessions ──────────────
+  useEffect(() => {
+    try {
+      const t = localStorage.getItem("ng_theme");
+      const l = localStorage.getItem("ng_lang");
+      const patch: Partial<State> = {};
+      if (t === "light" || t === "dark") patch.theme = t;
+      if (l === "en" || l === "th") patch.lang = l;
+      if (Object.keys(patch).length) setState(patch);
+    } catch {
+      // localStorage unavailable (SSR / privacy mode) — fall back to defaults.
+    }
+  }, [setState]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("ng_theme", state.theme);
+    } catch {
+      /* ignore */
+    }
+  }, [state.theme]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("ng_lang", state.lang);
+    } catch {
+      /* ignore */
+    }
+  }, [state.lang]);
+
   // clock for ephemeral-photo countdowns
   useEffect(() => {
     t0.current = Date.now();
@@ -55,77 +130,128 @@ export function useNudGoo(): { state: State; vm: VM } {
     };
   }, [setState]);
 
-  // keep the latest message in view after a new one is pushed
+  // keep the latest message in view after a new one arrives
   useEffect(() => {
-    if (stick.current && msgEl.current) {
+    if (msgEl.current) {
       msgEl.current.scrollTop = msgEl.current.scrollHeight;
-      stick.current = false;
     }
-  }, [state.msgs]);
+  }, [chat.messages.length]);
 
-  const nowTime = () => {
-    const d = new Date();
-    return pad(d.getHours()) + ":" + pad(d.getMinutes());
-  };
-
-  const pushMsg = useCallback(
-    (extra: Partial<ChatMsg> & { type: ChatMsg["type"] }) => {
-      stick.current = true;
-      setState((p) => {
-        const replyTo = p.replyToId;
-        const msg: ChatMsg = {
-          id: Date.now(),
-          from: "you",
-          time: nowTime(),
-          ...(replyTo ? { replyTo } : {}),
-          ...extra,
-        };
-        return {
-          msgs: [...p.msgs, msg],
-          replyToId: null,
-          draft: extra.type === "text" ? "" : p.draft,
-        };
-      });
-    },
-    [setState],
-  );
-
-  const react = useCallback(
-    (msgId: number, emoji: string) => {
-      setState((p) => ({
-        msgs: p.msgs.map((m) => {
-          if (m.id !== msgId) return m;
-          const rx: Record<string, string[]> = { ...(m.reactions || {}) };
-          const arr = [...(rx[emoji] || [])];
-          const i = arr.indexOf("you");
-          if (i >= 0) arr.splice(i, 1);
-          else arr.push("you");
-          if (arr.length) rx[emoji] = arr;
-          else delete rx[emoji];
-          return { ...m, reactions: rx };
-        }),
-      }));
-    },
-    [setState],
-  );
+  const react = useCallback((msgId: string, emoji: string) => {
+    void chatRef.current.react(msgId, emoji);
+  }, []);
 
   const voteMute = useCallback(
     (id: string) => {
-      const had = stateRef.current.myMutes.includes(id);
-      setState((p) => {
-        const has = p.myMutes.includes(id);
-        const votes = { ...p.muteVotes, [id]: Math.max(0, (p.muteVotes[id] || 0) + (has ? -1 : 1)) };
-        return { myMutes: has ? p.myMutes.filter((x) => x !== id) : [...p.myMutes, id], muteVotes: votes };
-      });
-      const f = FRIENDS.find((x) => x.id === id);
-      show(had ? `Removed mute vote for ${f?.name}` : `🔇 Voted to mute ${f?.name}`);
+      const uid = authRef.current.session?.user.id;
+      const member = authRef.current.members.find((m) => m.id === id);
+      const had = groupRef.current.muteVotes.some((mv) => mv.target_id === id && mv.voter_id === uid);
+      void groupRef.current.toggleMute(id);
+      const name = member?.display_name ?? "member";
+      show(had ? `Removed mute vote for ${name}` : `🔇 Voted to mute ${name}`);
     },
-    [setState, show],
+    [show],
   );
 
   const api: NudGooApi = {
+    auth,
+    group,
+    chat,
     setState,
     show,
+    createHangout: () => {
+      const h = stateRef.current.hangout;
+      const title = h.title.trim();
+      if (title.length < 2) {
+        show("Give your hangout a name first");
+        return;
+      }
+      void groupRef.current
+        .createTrip({
+          title,
+          destination: h.dest.trim(),
+          emoji: h.emoji || "🗺️",
+          startDate: h.date.trim() || null,
+          notes: h.notes.trim() || null,
+          transport: h.transport.trim() || null,
+        })
+        .then((id) => {
+          if (id) {
+            setState({
+              sheet: null,
+              tab: "trip",
+              tripView: "detail",
+              selectedTrip: id,
+              hangout: { title: "", dest: "", date: "", notes: "", emoji: "🗺️", transport: "" },
+            });
+            show("🎉 Hangout created");
+          } else {
+            show("Couldn't create hangout");
+          }
+        });
+    },
+    updateHangout: () => {
+      const h = stateRef.current.hangout;
+      const id = stateRef.current.selectedTrip;
+      const title = h.title.trim();
+      if (!id || title.length < 2) {
+        show("Give your hangout a name first");
+        return;
+      }
+      void groupRef.current.updateTrip(id, {
+        title,
+        destination: h.dest.trim(),
+        emoji: h.emoji || "🗺️",
+        startDate: h.date.trim() || null,
+        notes: h.notes.trim() || null,
+        transport: h.transport.trim() || null,
+      });
+      setState({ sheet: null, tripEditing: false });
+      show("Hangout updated");
+    },
+    setTripRsvp: (rsvp) => {
+      const id = stateRef.current.selectedTrip;
+      if (id) void groupRef.current.setRsvp(id, rsvp);
+    },
+    submitDateOption: () => {
+      const id = stateRef.current.selectedTrip;
+      const label = stateRef.current.dateOptLabel.trim();
+      if (!id || !label) return;
+      void groupRef.current.addDateOption(id, label, stateRef.current.dateOptDate.trim() || null);
+      setState({ dateOptLabel: "", dateOptDate: "" });
+      show("Date option added");
+    },
+    toggleBill: () => {
+      const t = groupRef.current.trips.find((x) => x.id === stateRef.current.selectedTrip);
+      if (!t) return;
+      void groupRef.current.setBill(t.id, { enabled: !t.bill_split_enabled, total: t.total_amount, treasurerId: t.treasurer_id });
+    },
+    setTreasurer: (uid) => {
+      const t = groupRef.current.trips.find((x) => x.id === stateRef.current.selectedTrip);
+      if (!t) return;
+      void groupRef.current.setBill(t.id, { enabled: true, total: t.total_amount, treasurerId: uid });
+    },
+    saveBillTotal: () => {
+      const t = groupRef.current.trips.find((x) => x.id === stateRef.current.selectedTrip);
+      if (!t) return;
+      const amt = parseInt(stateRef.current.billTotalDraft.replace(/[^0-9]/g, ""), 10);
+      void groupRef.current.setBill(t.id, { enabled: true, total: Number.isFinite(amt) ? amt : null, treasurerId: t.treasurer_id });
+      setState({ billTotalDraft: "" });
+      show("Bill amount set");
+    },
+    toggleBillPaid: () => {
+      const id = stateRef.current.selectedTrip;
+      if (!id) return;
+      const uid = authRef.current.session?.user.id;
+      const paid = groupRef.current.billPayments.find((b) => b.trip_id === id && b.user_id === uid)?.paid ?? false;
+      void groupRef.current.setBillPaid(id, !paid);
+    },
+    addAlbumPhoto: (file) => {
+      const id = stateRef.current.selectedTrip;
+      if (!id) return;
+      show("📸 Uploading photo…");
+      void groupRef.current.addTripPhoto(id, file);
+    },
     t0: t0.current,
     evId: evId.current,
     setMsgRef: (el) => {
@@ -139,35 +265,46 @@ export function useNudGoo(): { state: State; vm: VM } {
       setState({ sheet: "event" });
     },
     doAuth: () => {
-      if (stateRef.current.authMode === "register") setState({ screen: "waiting", account: "pending" });
-      else setState({ screen: "onboard", onboardStep: "choose", account: "approved" });
+      const { authMode, authUser, authPass, authName } = stateRef.current;
+      const email = authUser.trim();
+      const password = authPass;
+      if (!email || !password) return;
+      if (authMode === "register") void authRef.current.signUpEmail(email, password, authName.trim());
+      else void authRef.current.signInEmail(email, password);
     },
-    googleAuth: () =>
-      setState({ screen: "onboard", onboardStep: "choose", account: "approved", authUser: stateRef.current.authUser || "you@gmail.com" }),
+    googleAuth: () => void authRef.current.signInGoogle(),
     doCreateGroup: () => {
       const name = stateRef.current.newGroupName.trim();
       if (name.length < 2) return;
-      const id = "g" + Date.now();
       const emoji = stateRef.current.newGroupEmoji;
+      // Name/emoji are local chrome; membership is claimed server-side.
       setState((p) => ({
-        groups: [{ id, name, emoji: p.newGroupEmoji, color: "#3B5BDB", members: 1, unread: 0 }, ...p.groups],
-        activeGroup: id, screen: "app", tab: "calendar", account: "approved", newGroupName: "",
+        groups: p.groups.map((g) => (g.id === p.activeGroup ? { ...g, name, emoji } : g)),
+        newGroupName: "",
       }));
+      void authRef.current.claimGroup();
       show(`Created ${name} ${emoji}`);
     },
     doOnbJoin: () => {
-      if (stateRef.current.joinCode.trim().length < 4) return;
-      setState({ screen: "waiting", account: "pending", joinCode: "" });
+      const code = stateRef.current.joinCode.trim();
+      if (code.length < 4) return;
+      // Verify the invite code, then become a pending member awaiting approval.
+      void authRef.current.validateJoinCode(code).then((ok) => {
+        if (ok) {
+          setState({ screen: "waiting", account: "pending", joinCode: "" });
+          show("🎉 Request sent — waiting for an admin to approve you");
+        } else {
+          show("Invalid invite code");
+        }
+      });
     },
     approveRequest: (id) => {
-      const r = stateRef.current.joinRequests.find((x) => x.id === id);
-      setState((p) => ({ joinRequests: p.joinRequests.filter((x) => x.id !== id) }));
-      if (r) show(`✅ Approved ${r.name}`);
+      void authRef.current.approveMember(id);
+      show("✅ Member approved");
     },
     rejectRequest: (id) => {
-      const r = stateRef.current.joinRequests.find((x) => x.id === id);
-      setState((p) => ({ joinRequests: p.joinRequests.filter((x) => x.id !== id) }));
-      if (r) show(`Rejected ${r.name}`);
+      void authRef.current.rejectMember(id);
+      show("Request rejected");
     },
     switchGroup: (id) => {
       const g = stateRef.current.groups.find((x) => x.id === id);
@@ -175,9 +312,16 @@ export function useNudGoo(): { state: State; vm: VM } {
       if (g) show(`Switched to ${g.name} ${g.emoji}`);
     },
     doJoin: () => {
-      if (stateRef.current.joinCode.trim().length < 4) return;
-      setState({ sheet: null, joinCode: "" });
-      show("🎉 Joined! Ask the gang to confirm you");
+      const code = stateRef.current.joinCode.trim();
+      if (code.length < 4) return;
+      void authRef.current.validateJoinCode(code).then((ok) => {
+        if (ok) {
+          setState({ sheet: null, joinCode: "" });
+          show("🎉 Code accepted! Ask an admin to approve you");
+        } else {
+          show("Invalid invite code");
+        }
+      });
     },
     saveEdit: () => {
       const f = stateRef.current.editField;
@@ -188,6 +332,10 @@ export function useNudGoo(): { state: State; vm: VM } {
       }
       if (f === "username") v = v.replace(/^@/, "").replace(/\s+/g, "_").toLowerCase();
       setState((p) => ({ profile: { ...p.profile, [f]: v }, editField: null }));
+      // persist to DB
+      if (f === "name") void authRef.current.updateDisplayName(v);
+      else if (f === "username") void authRef.current.updateProfileFields({ username: v });
+      else if (f === "phone") void authRef.current.updateProfileFields({ phone: v });
       show(f === "name" ? "Name updated" : f === "username" ? "Username updated" : "Phone number updated");
     },
     savePw: () => {
@@ -211,10 +359,14 @@ export function useNudGoo(): { state: State; vm: VM } {
     saveNick: () => {
       const v = stateRef.current.editValue.trim() || stateRef.current.nickname;
       setState({ nickname: v, gEdit: null });
+      void authRef.current.updateProfileFields({ nickname: v });
       show("Nickname updated");
     },
     voteMute,
-    toggleRule: (id) => setState((p) => ({ rules: p.rules.map((r) => (r.id === id ? { ...r, on: !r.on } : r)) })),
+    toggleRule: (id) => {
+      const r = groupRef.current.rules.find((x) => x.id === id);
+      if (r) void groupRef.current.setRuleEnabled(id, !r.enabled);
+    },
     castVote: (id) => {
       const labels: Record<string, string> = { sat20: "This Saturday", sun28: "Next Sunday", fri26: "Fri after work" };
       const cancel = stateRef.current.myVote === id;
@@ -228,18 +380,37 @@ export function useNudGoo(): { state: State; vm: VM } {
       const f = FRIENDS.find((x) => x.id === id);
       show(`${f?.name === "You" ? "You" : f?.name} → ${SM[next].label}`);
     },
-    sendPhoto: () => {
-      pushMsg({ type: "photo", dur: 86400, _t0: Date.now(), tint: "#6741D9" });
-      show("📸 Photo sent · self-destructs in 24h");
+    sendPhotoFile: (file) => {
+      setState({ attachMenu: false });
+      show("📸 Uploading photo…");
+      void chatRef.current.sendPhotoFile(file);
+    },
+    sendGifFile: (file) => {
+      setState({ attachMenu: false, sheet: null });
+      show("🖼️ Uploading…");
+      void chatRef.current.sendGifFile(file);
+    },
+    sendGifUrl: (url, label) => {
+      setState({ sheet: null });
+      void chatRef.current.sendGifUrl(url, label);
     },
     sendLocation: () => {
-      setState({ sheet: null });
-      pushMsg({ type: "location", place: "Current location", addr: "Pinned on the map", url: "https://maps.google.com/?q=current" });
-      show("📍 Location shared");
-    },
-    sendGif: (g) => {
-      setState({ sheet: null });
-      pushMsg({ type: "gif", label: g.label, c1: g.c1, c2: g.c2 });
+      setState({ sheet: null, attachMenu: false });
+      if (typeof navigator === "undefined" || !navigator.geolocation) {
+        show("Location isn't supported on this device");
+        return;
+      }
+      show("📍 Getting your location…");
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const url = `https://maps.google.com/?q=${lat},${lng}`;
+          void chatRef.current.sendLocation("My location", `${lat.toFixed(5)}, ${lng.toFixed(5)}`, url);
+        },
+        () => show("Couldn't get your location — check permissions"),
+        { enableHighAccuracy: true, timeout: 10000 },
+      );
     },
     rollDice: () => {
       if (stateRef.current.rolling) return;
@@ -265,7 +436,9 @@ export function useNudGoo(): { state: State; vm: VM } {
     sendText: () => {
       const t = stateRef.current.draft.trim();
       if (!t) return;
-      pushMsg({ type: "text", text: t });
+      const replyTo = stateRef.current.replyToId;
+      setState({ draft: "", replyToId: null });
+      void chatRef.current.sendText(t, replyTo);
     },
     setPollOpt: (i, v) => setState((p) => { const o = [...p.pollOpts]; o[i] = v; return { pollOpts: o }; }),
     removePollOpt: (i) => setState((p) => ({ pollOpts: p.pollOpts.filter((_, idx) => idx !== i) })),
@@ -273,8 +446,8 @@ export function useNudGoo(): { state: State; vm: VM } {
       const qq = stateRef.current.pollQ.trim();
       const opts = stateRef.current.pollOpts.map((o) => o.trim()).filter(Boolean);
       if (!qq || opts.length < 2) return;
-      setState({ sheet: null });
-      pushMsg({ type: "poll", question: qq, options: opts.map((t) => ({ t, v: [] })) });
+      setState({ sheet: null, pollQ: "", pollOpts: ["", ""] });
+      void chatRef.current.sendPoll(qq, opts);
       show("📊 Poll posted");
     },
     react,
@@ -283,18 +456,8 @@ export function useNudGoo(): { state: State; vm: VM } {
       setState({ msgMenu: null });
       if (id) react(id, emoji);
     },
-    votePoll: (msgId, optIdx) => {
-      setState((p) => ({
-        msgs: p.msgs.map((m) => {
-          if (m.id !== msgId || m.type !== "poll" || !m.options) return m;
-          const options = m.options.map((op, idx) => {
-            const v = op.v.filter((x) => x !== "you");
-            if (idx === optIdx && !op.v.includes("you")) v.push("you");
-            return { ...op, v };
-          });
-          return { ...m, options };
-        }),
-      }));
+    votePoll: (_msgId, optionId) => {
+      void chatRef.current.votePoll(_msgId, optionId);
     },
     startLongPress: (id) => {
       if (lpTimer.current) clearTimeout(lpTimer.current);
@@ -311,33 +474,37 @@ export function useNudGoo(): { state: State; vm: VM } {
     },
     menuAction: (action) => {
       const id = stateRef.current.msgMenu;
-      const m = stateRef.current.msgs.find((x) => x.id === id);
-      if (!m) {
+      const m = chatRef.current.messages.find((x) => x.id === id);
+      if (!m || !id) {
         setState({ msgMenu: null });
         return;
       }
       if (action === "reply") setState({ replyToId: id, msgMenu: null });
       else if (action === "pin") {
-        const wasPinned = stateRef.current.pinnedId === id;
-        setState((p) => ({ pinnedId: p.pinnedId === id ? null : id, msgMenu: null }));
+        const wasPinned = !!m.pinned;
+        void chatRef.current.togglePin(id);
+        setState({ msgMenu: null });
         show(wasPinned ? "Unpinned" : "📌 Pinned message");
       } else if (action === "copy") {
+        if (typeof navigator !== "undefined" && navigator.clipboard && m.text) void navigator.clipboard.writeText(m.text);
         setState({ msgMenu: null });
         show("Copied to clipboard");
       } else if (action === "edit") setState({ editMsgId: id, editMsgText: m.text || "", msgMenu: null });
       else if (action === "delete") {
-        setState((p) => ({ msgs: p.msgs.filter((x) => x.id !== id), msgMenu: null, pinnedId: p.pinnedId === id ? null : p.pinnedId }));
+        void chatRef.current.deleteMessage(id);
+        setState({ msgMenu: null });
         show("Message deleted");
       }
     },
     saveEditMsg: () => {
       const t = stateRef.current.editMsgText.trim();
       const id = stateRef.current.editMsgId;
-      if (!t) {
+      if (!t || !id) {
         setState({ editMsgId: null });
         return;
       }
-      setState((p) => ({ msgs: p.msgs.map((m) => (m.id === id ? { ...m, text: t, edited: true } : m)), editMsgId: null, editMsgText: "" }));
+      void chatRef.current.editMessage(id, t);
+      setState({ editMsgId: null, editMsgText: "" });
       show("Message edited");
     },
     openProfilePopup: (id) => {
@@ -346,10 +513,11 @@ export function useNudGoo(): { state: State; vm: VM } {
     },
     mentionInChat: () => {
       const id = stateRef.current.profilePopup;
-      const f = FRIENDS.find((x) => x.id === id);
-      if (!f) return;
-      setState((p) => ({ draft: (p.draft ? p.draft.replace(/\s*$/, " ") : "") + "@" + f.name + " ", profilePopup: null }));
-      show(`Mentioning ${f.name}`);
+      const member = authRef.current.members.find((x) => x.id === id);
+      const name = member?.display_name;
+      if (!name) return;
+      setState((p) => ({ draft: (p.draft ? p.draft.replace(/\s*$/, " ") : "") + "@" + name + " ", profilePopup: null }));
+      show(`Mentioning ${name}`);
       if (inpEl.current) inpEl.current.focus();
     },
     msgPointerDown: (e: PointerEvent) => {
@@ -370,47 +538,77 @@ export function useNudGoo(): { state: State; vm: VM } {
     },
     spinWheel: () => {
       if (stateRef.current.wheelSpinning) return;
+      if (stateRef.current.wheelOptions.map((o) => o.trim()).filter(Boolean).length < 2) {
+        show("Add at least 2 options to spin");
+        return;
+      }
       const turns = 1440 + Math.floor(Math.random() * 360);
       setState((p) => ({ wheelSpinning: true, wheelResult: null, wheelAngle: p.wheelAngle + turns }));
       if (wheelTimer.current) clearTimeout(wheelTimer.current);
       wheelTimer.current = setTimeout(() => {
+        const items = stateRef.current.wheelOptions.map((o) => o.trim()).filter(Boolean);
+        if (items.length < 2) {
+          setState({ wheelSpinning: false });
+          return;
+        }
         const angle = stateRef.current.wheelAngle;
         const pos = (360 - (angle % 360)) % 360;
-        const idx = Math.floor(pos / 60) % FRIENDS.length;
-        const f = FRIENDS[idx]!;
-        setState({ wheelSpinning: false, wheelResult: f.name });
-        show(`🎡 The wheel picked ${f.name}!`);
+        const seg = 360 / items.length;
+        const idx = Math.floor(pos / seg) % items.length;
+        const pick = items[idx]!;
+        setState({ wheelSpinning: false, wheelResult: pick });
+        show(`🎡 The wheel picked ${pick}!`);
       }, 3500);
+    },
+    setWheelOption: (i, val) => setState((p) => { const o = [...p.wheelOptions]; o[i] = val; return { wheelOptions: o }; }),
+    removeWheelOption: (i) => setState((p) => ({ wheelOptions: p.wheelOptions.filter((_, idx) => idx !== i) })),
+    addWheelOption: () => setState((p) => ({ wheelOptions: [...p.wheelOptions, ""] })),
+    addEveryoneToWheel: () => {
+      const names = authRef.current.members.map((m) => m.display_name);
+      setState((p) => {
+        const existing = new Set(p.wheelOptions.map((o) => o.trim()));
+        const toAdd = names.filter((n) => !existing.has(n));
+        const kept = p.wheelOptions.filter((o) => o.trim());
+        return { wheelOptions: [...kept, ...toAdd] };
+      });
+      show("Added everyone in the group");
     },
     editTrip: () => {
       const id = stateRef.current.selectedTrip;
-      const t = stateRef.current.trips.find((x) => x.id === id) ?? stateRef.current.trips[0];
-      setState({ sheet: "add", tripEditing: true, tripNameDraft: t ? t.name : "" });
+      const t = groupRef.current.trips.find((x) => x.id === id);
+      if (!t) return;
+      setState({
+        sheet: "add",
+        tripEditing: true,
+        hangout: {
+          title: t.title,
+          dest: t.destination === "TBD" ? "" : t.destination,
+          date: t.start_date || "",
+          notes: t.notes || "",
+          emoji: t.emoji || "🗺️",
+          transport: t.transport || "",
+        },
+      });
     },
     saveTripEdit: () => {
       const name = stateRef.current.tripNameDraft.trim();
       const id = stateRef.current.selectedTrip;
-      if (name) {
-        setState((p) => ({ trips: p.trips.map((t) => (t.id === id ? { ...t, name } : t)), sheet: null, tripEditing: false }));
-        show("Trip updated");
-      } else {
-        setState({ sheet: null, tripEditing: false });
-      }
+      if (name && id) void groupRef.current.renameTrip(id, name);
+      setState({ sheet: null, tripEditing: false });
+      if (name && id) show("Trip updated");
     },
     startAddRule: () => setState({ addingRule: true, newRule: "" }),
     commitRule: () => {
       const t = stateRef.current.newRule.trim();
-      if (!t) {
-        setState({ addingRule: false, newRule: "" });
-        return;
-      }
-      setState((p) => ({ rules: [...p.rules, { id: "r" + Date.now(), text: t, on: true }], addingRule: false, newRule: "" }));
+      setState({ addingRule: false, newRule: "" });
+      if (!t) return;
+      void groupRef.current.addRule(t);
       show("Rule added");
     },
     holdRuleStart: (id) => {
       if (ruleHoldTimer.current) clearTimeout(ruleHoldTimer.current);
       ruleHoldTimer.current = setTimeout(() => {
-        setState((p) => ({ rules: p.rules.filter((r) => r.id !== id) }));
+        void groupRef.current.removeRule(id);
         show("Rule removed");
         if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(12);
       }, 550);
@@ -422,18 +620,13 @@ export function useNudGoo(): { state: State; vm: VM } {
       }
     },
     logout: () => {
-      setState({ screen: "auth", authMode: "login", account: "approved", sheet: null, tab: "calendar", authUser: "", authPass: "", authName: "" });
+      setState({ authMode: "login", sheet: null, authUser: "", authPass: "", authName: "" });
+      void authRef.current.signOut(); // the auth-sync effect returns us to the auth screen
     },
     leaveGroup: () => {
-      const cur = stateRef.current.activeGroup;
-      const rest = stateRef.current.groups.filter((g) => g.id !== cur);
-      const left = stateRef.current.groups.find((g) => g.id === cur);
-      if (rest.length) {
-        setState({ groups: rest, activeGroup: rest[0]!.id, tab: "calendar", sheet: null });
-        show(`Left ${left ? left.name : "group"}`);
-      } else {
-        setState({ screen: "onboard", onboardStep: "choose", sheet: null });
-      }
+      // Single-group model: leaving the group means signing out of the app.
+      setState({ sheet: null });
+      void authRef.current.signOut();
     },
     createNewGroup: () => {
       setState({ screen: "onboard", onboardStep: "create", sheet: null, newGroupName: "", newGroupEmoji: "🎉" });

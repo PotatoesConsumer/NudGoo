@@ -1,9 +1,10 @@
-import { Fragment } from "react";
+import { useRef } from "react";
 
 import { css } from "@/lib/nudgoo/css";
 import type { VM } from "@/lib/nudgoo/viewModel";
 
 export function TripScreen({ v }: { v: VM }) {
+  const albumRef = useRef<HTMLInputElement>(null);
   return (
     <div className="scroll-area" style={css("flex:1;overflow-y:auto;padding:18px 16px 24px")}>
       {/* ── list ── */}
@@ -33,11 +34,13 @@ export function TripScreen({ v }: { v: VM }) {
                   </button>
                 ))}
               </div>
-              <button onClick={v.openTripHistory} style={css("width:100%;margin-top:12px;border:0;cursor:pointer;background:var(--surface-raised);border-radius:16px;padding:14px;display:flex;gap:13px;align-items:center")}>
-                <div style={css("flex:0 0 44px;width:44px;height:44px;border-radius:12px;background:var(--surface-overlay);display:flex;align-items:center;justify-content:center")}><i className="ph-duotone ph-clock-counter-clockwise" style={css("font-size:23px;color:var(--ink-secondary)")} /></div>
-                <div style={css("flex:1;text-align:left")}><div style={css("font-weight:700;font-size:14.5px;color:var(--ink)")}>Trip history</div><div style={css("font-size:11.5px;color:var(--ink-tertiary)")}>Past hangouts &amp; who joined</div></div>
-                <i className="ph-bold ph-caret-right" style={css("font-size:16px;color:var(--ink-disabled)")} />
-              </button>
+              {v.showTripHistory && (
+                <button onClick={v.openTripHistory} style={css("width:100%;margin-top:12px;border:0;cursor:pointer;background:var(--surface-raised);border-radius:16px;padding:14px;display:flex;gap:13px;align-items:center")}>
+                  <div style={css("flex:0 0 44px;width:44px;height:44px;border-radius:12px;background:var(--surface-overlay);display:flex;align-items:center;justify-content:center")}><i className="ph-duotone ph-clock-counter-clockwise" style={css("font-size:23px;color:var(--ink-secondary)")} /></div>
+                  <div style={css("flex:1;text-align:left")}><div style={css("font-weight:700;font-size:14.5px;color:var(--ink)")}>Trip history</div><div style={css("font-size:11.5px;color:var(--ink-tertiary)")}>Past hangouts &amp; who joined</div></div>
+                  <i className="ph-bold ph-caret-right" style={css("font-size:16px;color:var(--ink-disabled)")} />
+                </button>
+              )}
             </>
           )}
           {v.noTrips && (
@@ -105,7 +108,7 @@ export function TripScreen({ v }: { v: VM }) {
           <div style={css("display:flex;align-items:center;gap:7px;margin-bottom:12px")}>
             <i className="ph-fill ph-info" style={css("font-size:17px;color:var(--primary)")} />
             <span style={css("font-family:Trirong,serif;font-weight:600;font-size:16px;color:var(--ink);flex:1")}>Trip details</span>
-            {v.isCreator && (
+            {v.tripCanEdit && (
               <button onClick={v.editTrip} aria-label="edit trip" style={css("width:30px;height:30px;border-radius:9px;border:1px solid var(--hairline);background:var(--canvas);display:flex;align-items:center;justify-content:center;cursor:pointer")}><i className="ph ph-pencil-simple" style={css("font-size:14px;color:var(--ink-secondary)")} /></button>
             )}
           </div>
@@ -126,7 +129,7 @@ export function TripScreen({ v }: { v: VM }) {
             </div>
             <div style={css("display:flex;align-items:center;gap:13px;padding:13px 0")}>
               <i className="ph ph-users-three" style={css("font-size:19px;color:var(--ink-tertiary)")} />
-              <div style={css("flex:1")}><div style={css("font-size:11px;color:var(--ink-tertiary)")}>Going</div><div style={css("font-weight:600;font-size:14px;color:var(--ink)")}>{v.tripDetail.goingCount} of 6 confirmed</div></div>
+              <div style={css("flex:1")}><div style={css("font-size:11px;color:var(--ink-tertiary)")}>Going</div><div style={css("font-weight:600;font-size:14px;color:var(--ink)")}>{v.tripDetail.goingCount} of {v.groupMemberCount} confirmed</div></div>
               <div style={css("display:flex;align-items:center")}>
                 {v.tripGoing.map((a, i) => (
                   <span key={i} style={css(`width:28px;height:28px;border-radius:50%;background:${a.bg};color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:Inter,sans-serif;border:2px solid var(--canvas);margin-left:-8px`)}>{a.initial}</span>
@@ -135,6 +138,18 @@ export function TripScreen({ v }: { v: VM }) {
             </div>
           </div>
 
+          {/* RSVP — real */}
+          <div style={css("display:flex;align-items:center;gap:7px;margin-bottom:10px")}>
+            <i className="ph-fill ph-hand-waving" style={css("font-size:17px;color:var(--primary)")} />
+            <span style={css("font-family:Trirong,serif;font-weight:600;font-size:16px;color:var(--ink)")}>Are you in?</span>
+          </div>
+          <div style={css("display:flex;gap:9px;margin-bottom:22px")}>
+            {v.rsvpButtons.map((b) => (
+              <button key={b.id} onClick={b.onTap} style={css(`flex:1;display:flex;align-items:center;justify-content:center;gap:6px;height:46px;border-radius:13px;border:0;cursor:pointer;background:${b.bg};color:${b.fg};font-weight:700;font-size:14px;font-family:'Sarabun',sans-serif`)}><i className={b.icon} style={css("font-size:16px")} /> {b.label}</button>
+            ))}
+          </div>
+
+          {v.tripShowAlbum && (<>
           {/* trip album */}
           <div style={css("display:flex;align-items:center;gap:7px;margin-bottom:12px")}>
             <i className="ph-fill ph-images-square" style={css("font-size:17px;color:var(--primary)")} />
@@ -146,14 +161,16 @@ export function TripScreen({ v }: { v: VM }) {
               <i className="ph ph-clock-countdown" style={css("font-size:14px;color:var(--ink-tertiary)")} />
               <span style={css("font-size:11.5px;color:var(--ink-tertiary)")}>Photos auto-delete 2 days after the trip</span>
             </div>
+            <input ref={albumRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) v.addAlbumPhoto(f); e.currentTarget.value = ""; }} />
             <div style={css("display:grid;grid-template-columns:repeat(3,1fr);gap:8px")}>
-              <button onClick={v.addAlbumPhoto} aria-label="add photo" style={css("aspect-ratio:1;border:1.5px dashed var(--hairline-strong);border-radius:13px;background:var(--surface-raised);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer")}>
+              <button onClick={() => albumRef.current?.click()} aria-label="add photo" style={css("aspect-ratio:1;border:1.5px dashed var(--hairline-strong);border-radius:13px;background:var(--surface-raised);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer")}>
                 <i className="ph-bold ph-plus" style={css("font-size:20px;color:var(--ink-tertiary)")} />
                 <span style={css("font-size:9.5px;font-weight:700;color:var(--ink-tertiary)")}>Add</span>
               </button>
               {v.tripAlbum.map((ph) => (
-                <div key={ph.key} style={css(`aspect-ratio:1;border-radius:13px;overflow:hidden;position:relative;background:${ph.tint}`)}>
-                  <div style={css("position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.15),rgba(0,0,0,.25));display:flex;align-items:center;justify-content:center")}><i className="ph-duotone ph-image" style={css("font-size:26px;color:rgba(255,255,255,.85)")} /></div>
+                <div key={ph.key} style={css("aspect-ratio:1;border-radius:13px;overflow:hidden;position:relative;background:var(--surface-raised)")}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={ph.imageUrl} alt="trip" style={css("width:100%;height:100%;object-fit:cover;display:block")} />
                   <span style={css(`position:absolute;left:5px;top:5px;width:20px;height:20px;border-radius:50%;background:${ph.byBg};color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;font-family:Inter,sans-serif;border:1.5px solid rgba(255,255,255,.6)`)}>{ph.byInitial}</span>
                   <span style={css(`position:absolute;left:4px;right:4px;bottom:4px;text-align:center;font-size:9px;font-weight:700;color:#fff;font-family:Inter,sans-serif;background:${ph.expBg};border-radius:6px;padding:2px 0`)}>{ph.expiry}</span>
                 </div>
@@ -161,6 +178,9 @@ export function TripScreen({ v }: { v: VM }) {
             </div>
           </div>
 
+          </>)}
+
+          {v.tripShowVoting && (<>
           {/* date voting */}
           <div style={css("display:flex;align-items:center;gap:7px;margin-bottom:12px")}>
             <i className="ph-fill ph-calendar-check" style={css("font-size:17px;color:var(--primary)")} />
@@ -174,7 +194,7 @@ export function TripScreen({ v }: { v: VM }) {
               <span style={css("width:9px;height:9px;border-radius:50%;background:var(--profit);box-shadow:0 0 0 4px rgba(47,158,68,.18);animation:pulse 1.5s ease-in-out infinite")} />
               <span style={css("font-family:Inter,sans-serif;font-size:11px;font-weight:700;letter-spacing:.6px;color:var(--profit)")}>LIVE VOTES</span>
             </div>
-            <span style={css("font-size:12px;color:var(--ink-tertiary);font-weight:600;white-space:nowrap")}>{v.votedCount} of 6 voted</span>
+            <span style={css("font-size:12px;color:var(--ink-tertiary);font-weight:600;white-space:nowrap")}>{v.votedCount} of {v.groupMemberCount} voted</span>
           </div>
           <div style={css("display:flex;flex-direction:column;gap:12px")}>
             {v.voteOptions.map((o) => (
@@ -190,6 +210,9 @@ export function TripScreen({ v }: { v: VM }) {
                   <button onClick={o.onVote} style={css(`display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 15px;border-radius:11px;border:0;cursor:pointer;background:${o.voteBg};color:${o.voteFg};font-weight:700;font-size:13px;font-family:'Sarabun',sans-serif`)}>
                     <i className={o.voteIcon} style={css("font-size:15px")} /> {o.voteLabel}
                   </button>
+                  {o.canRemove && (
+                    <button onClick={o.onRemove} aria-label="remove date" style={css("flex:0 0 34px;width:34px;height:34px;border-radius:10px;border:1px solid var(--hairline);background:var(--canvas);display:flex;align-items:center;justify-content:center;cursor:pointer")}><i className="ph ph-trash" style={css("font-size:14px;color:var(--error)")} /></button>
+                  )}
                 </div>
                 <div style={css("display:flex;align-items:center;gap:10px")}>
                   <div style={css("flex:1;height:10px;border-radius:9999px;background:var(--surface-overlay);overflow:hidden")}>
@@ -205,76 +228,94 @@ export function TripScreen({ v }: { v: VM }) {
               </div>
             ))}
           </div>
+          {v.voteCanEdit && (
+            <div style={css("display:flex;flex-direction:column;gap:8px;margin-top:12px")}>
+              <input value={v.voteAddLabel} onChange={v.onVoteAddLabel} placeholder="Add a date option…" style={css("width:100%;border:0;height:44px;padding:0 14px;border-radius:12px;background:var(--surface-raised);outline:0;font-family:'Sarabun',sans-serif;font-size:14px;color:var(--ink)")} />
+              <div style={css("display:flex;gap:8px")}>
+                <input value={v.voteAddDate} onChange={v.onVoteAddDate} type="date" style={css("flex:1;min-width:0;border:0;height:44px;padding:0 12px;border-radius:12px;background:var(--surface-raised);outline:0;font-family:'Sarabun',sans-serif;font-size:13px;color:var(--ink)")} />
+                <button onClick={v.submitDateOption} disabled={!v.voteAddReady} style={css(`flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:6px;height:44px;padding:0 18px;border-radius:12px;border:0;background:var(--primary);color:#fff;font-weight:700;font-size:14px;font-family:'Sarabun',sans-serif;cursor:${v.voteAddReady ? "pointer" : "default"};opacity:${v.voteAddReady ? "1" : ".5"}`)}><i className="ph-bold ph-plus" style={css("font-size:16px")} /> Add</button>
+              </div>
+            </div>
+          )}
           <div style={css("display:flex;align-items:center;gap:10px;padding:13px 14px;border-radius:12px;background:var(--surface-raised);margin-top:16px")}>
             <i className="ph-fill ph-info" style={css("font-size:18px;color:var(--ink-tertiary)")} />
-            <span style={css("font-size:12.5px;color:var(--ink-secondary)")}>Highest votes by Friday becomes the official date. Change your pick anytime.</span>
+            <span style={css("font-size:12.5px;color:var(--ink-secondary)")}>Most-voted option wins. Members can change their pick anytime.</span>
           </div>
 
-          {/* bill splitting */}
+          </>)}
+
+          {v.tripShowBill && (<>
+          {/* bill splitting (real) */}
           <div style={css("height:1px;background:var(--hairline-soft);margin:24px 0 20px")} />
           <div style={css("display:flex;align-items:center;gap:9px;margin-bottom:14px")}>
             <i className="ph-fill ph-receipt" style={css("font-size:18px;color:var(--primary)")} />
             <span style={css("font-family:Trirong,serif;font-weight:600;font-size:16px;color:var(--ink);flex:1")}>Bill splitting</span>
-            {v.isCreator && (
-              <button onClick={v.toggleBillSplit} aria-label="toggle bill split" style={css(`flex:0 0 48px;width:48px;height:28px;border-radius:9999px;border:0;cursor:pointer;position:relative;transition:background .2s;background:${v.billTrack}`)}><span style={css(`position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s;transform:translateX(${v.billKnob})`)} /></button>
+            {v.billCanEdit && (
+              <button onClick={v.toggleBill} aria-label="toggle bill split" style={css(`flex:0 0 48px;width:48px;height:28px;border-radius:9999px;border:0;cursor:pointer;position:relative;transition:background .2s;background:${v.billTrack}`)}><span style={css(`position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s;transform:translateX(${v.billKnob})`)} /></button>
             )}
           </div>
-          {v.isCreator && (
-            <div style={css("font-size:11.5px;color:var(--ink-tertiary);margin:-6px 0 14px;padding-left:27px")}>As the trip creator, choose whether this trip collects money from the gang.</div>
-          )}
-          {v.billSplitEnabled && (
+          {v.billEnabled ? (
             <div style={css("background:var(--canvas);border-radius:18px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.06)")}>
               <div style={css("display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid var(--hairline-soft)")}>
                 <div>
                   <div style={css("font-size:11.5px;color:var(--ink-tertiary)")}>Your share to pay</div>
-                  <div style={css("font-family:Inter,sans-serif;font-weight:700;font-size:30px;color:var(--ink);line-height:1.1;letter-spacing:-.5px")}>฿ {v.billShare}</div>
-                  <div style={css("font-size:11.5px;color:var(--ink-tertiary);margin-top:2px")}>of ฿ {v.billTotal} total · split 6 ways</div>
+                  <div style={css("font-family:Inter,sans-serif;font-weight:700;font-size:30px;color:var(--ink);line-height:1.1;letter-spacing:-.5px")}>฿ {v.billShareLabel}</div>
+                  <div style={css("font-size:11.5px;color:var(--ink-tertiary);margin-top:2px")}>of ฿ {v.billTotalLabel} total · split {v.billSplitWays} ways</div>
                 </div>
-                <div style={css("display:flex;flex-direction:column;align-items:flex-end;gap:4px")}>
-                  <span style={css("font-size:11px;color:var(--ink-tertiary)")}>Treasurer · เหรัญญิก</span>
-                  <span style={css("display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:13.5px;color:var(--ink)")}><span style={css(`width:24px;height:24px;border-radius:50%;background:${v.treasurerColor};color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:Inter,sans-serif`)}>{v.treasurerInitial}</span>{v.billCollector}</span>
+                {v.hasTreasurer && (
+                  <div style={css("display:flex;flex-direction:column;align-items:flex-end;gap:4px")}>
+                    <span style={css("font-size:11px;color:var(--ink-tertiary)")}>Treasurer</span>
+                    <span style={css("display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:13.5px;color:var(--ink)")}><span style={css(`width:24px;height:24px;border-radius:50%;background:${v.treasurerColor};color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:Inter,sans-serif`)}>{v.treasurerInitial}</span>{v.treasurerName}</span>
+                  </div>
+                )}
+              </div>
+
+              {v.billCanEdit && (
+                <div style={css("padding:14px 0;border-bottom:1px solid var(--hairline-soft)")}>
+                  <div style={css("display:flex;gap:8px;margin-bottom:12px")}>
+                    <div style={css("flex:1;display:flex;align-items:center;gap:6px;height:44px;padding:0 14px;border-radius:12px;background:var(--surface-raised)")}>
+                      <span style={css("color:var(--ink-tertiary);font-weight:700")}>฿</span>
+                      <input value={v.billTotalDraft} onChange={v.onBillTotalDraft} inputMode="numeric" placeholder="Total amount" style={css("flex:1;border:0;background:transparent;outline:0;font-family:'Sarabun',sans-serif;font-size:14.5px;color:var(--ink)")} />
+                    </div>
+                    <button onClick={v.saveBillTotal} disabled={!v.billTotalReady} style={css(`flex:0 0 auto;height:44px;padding:0 18px;border-radius:12px;border:0;background:var(--primary);color:#fff;font-weight:700;font-size:14px;font-family:'Sarabun',sans-serif;cursor:${v.billTotalReady ? "pointer" : "default"};opacity:${v.billTotalReady ? "1" : ".5"}`)}>Set</button>
+                  </div>
+                  <div style={css("font-size:11px;font-weight:700;color:var(--ink-tertiary);letter-spacing:.4px;margin-bottom:8px;font-family:Inter,sans-serif")}>TREASURER</div>
+                  <div style={css("display:flex;flex-wrap:wrap;gap:7px")}>
+                    {v.treasurerChoices.map((t) => (
+                      <button key={t.id} onClick={t.onPick} style={css(`display:flex;align-items:center;gap:7px;height:38px;padding:0 12px 0 7px;border-radius:9999px;cursor:pointer;background:${t.bg};border:${t.border}`)}>
+                        <span style={css(`width:26px;height:26px;border-radius:50%;background:${t.color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:Inter,sans-serif`)}>{t.initial}</span>
+                        <span style={css(`font-size:13px;font-weight:600;color:${t.fg};white-space:nowrap`)}>{t.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div style={css("display:flex;align-items:center;gap:9px;padding:14px 0;border-bottom:1px solid var(--hairline-soft)")}>
+                <i className="ph-fill ph-qr-code" style={css("font-size:18px;color:var(--primary)")} />
+                <div style={css("flex:1;min-width:0")}>
+                  {v.treasurerPromptpay ? (
+                    <><div style={css("font-size:11px;color:var(--ink-tertiary)")}>Pay {v.treasurerName} via PromptPay</div><div style={css("font-weight:700;font-size:14px;color:var(--ink);font-family:Inter,sans-serif")}>{v.treasurerPromptpay}</div></>
+                  ) : (
+                    <div style={css("font-size:12.5px;color:var(--ink-tertiary)")}>{v.hasTreasurer ? `${v.treasurerName} hasn't added a PromptPay number (set it in Profile)` : "Pick a treasurer to collect the money"}</div>
+                  )}
                 </div>
               </div>
-              {v.treasurerHasQR && (
-                <div style={css("display:flex;flex-direction:column;align-items:center;padding:18px 0 6px")}>
-                  <div style={css("display:inline-flex;align-items:center;gap:6px;background:#1A3A6B;color:#fff;font-size:11px;font-weight:700;padding:5px 12px;border-radius:8px;margin-bottom:14px;font-family:Inter,sans-serif;letter-spacing:.3px")}><i className="ph-fill ph-scan" style={css("font-size:13px")} /> PromptPay</div>
-                  <div style={css("width:188px;height:188px;border-radius:16px;background:#fff;border:1px solid var(--hairline);padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);position:relative")}>
-                    <div style={css("width:100%;height:100%;display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(11,1fr);gap:1px")}>
-                      {v.qrSeedRows.map((row, ri) => (
-                        <Fragment key={ri}>{row.cells.map((cell, ci) => (<span key={ci} style={css(`background:${cell.color};border-radius:1px`)} />))}</Fragment>
-                      ))}
-                    </div>
-                    <div style={css("position:absolute;top:14px;left:14px;width:40px;height:40px;border:7px solid #212529;border-radius:8px;background:#fff")} />
-                    <div style={css("position:absolute;top:14px;right:14px;width:40px;height:40px;border:7px solid #212529;border-radius:8px;background:#fff")} />
-                    <div style={css("position:absolute;bottom:14px;left:14px;width:40px;height:40px;border:7px solid #212529;border-radius:8px;background:#fff")} />
-                    <div style={css("position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 4px #fff")}><i className="ph-fill ph-hand-peace" style={css("font-size:20px;color:var(--primary)")} /></div>
-                  </div>
-                  <div style={css("font-size:12px;color:var(--ink-tertiary);margin-top:12px")}>{v.billCollectorHandle}</div>
-                  <div style={css("font-family:Inter,sans-serif;font-weight:700;font-size:14px;color:var(--ink);margin-top:3px")}>Scan to pay ฿ {v.billShare}</div>
-                </div>
-              )}
-              {v.treasurerNoQR && (
-                <div style={css("display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 16px 10px")}>
-                  <div style={css("width:60px;height:60px;border-radius:16px;background:var(--surface-raised);display:flex;align-items:center;justify-content:center;margin-bottom:12px")}><i className="ph-duotone ph-qr-code" style={css("font-size:30px;color:var(--ink-tertiary)")} /></div>
-                  <div style={css("font-size:13.5px;font-weight:600;color:var(--ink)")}>{v.billCollector} hasn&apos;t saved a PromptPay QR</div>
-                  <div style={css("font-size:12px;color:var(--ink-tertiary);margin-top:4px;max-width:220px")}>Ask them to add one in their profile, or pick another treasurer.</div>
-                </div>
-              )}
-              <button onClick={v.uploadSlip} style={css("display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:46px;border-radius:12px;border:1.5px dashed var(--hairline-strong);background:var(--surface-raised);cursor:pointer;margin:16px 0 10px")}>
-                <i className="ph ph-paperclip" style={css("font-size:17px;color:var(--ink-secondary)")} />
-                <span style={css("font-size:13px;font-weight:600;color:var(--ink-secondary)")}>{v.slipLabel}</span>
-              </button>
-              <button onClick={v.confirmPay} style={css(`display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:50px;border-radius:13px;border:0;cursor:pointer;background:${v.payBtnBg};color:#fff;font-weight:700;font-size:15px;font-family:'Sarabun',sans-serif`)}>
+
+              <div style={css("display:flex;align-items:center;justify-content:space-between;padding-top:14px;margin-bottom:12px")}>
+                <span style={css("font-size:12.5px;color:var(--ink-secondary);font-weight:600")}>{v.billPaidLabel}</span>
+              </div>
+              <button onClick={v.togglePaid} style={css(`display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:50px;border-radius:13px;border:0;cursor:pointer;background:${v.payBtnBg};color:#fff;font-weight:700;font-size:15px;font-family:'Sarabun',sans-serif`)}>
                 <i className={v.payBtnIcon} style={css("font-size:18px")} /> {v.payBtnLabel}
               </button>
             </div>
-          )}
-          {v.billSplitDisabled && (
+          ) : (
             <div style={css("display:flex;align-items:center;gap:11px;padding:16px;border-radius:16px;background:var(--surface-raised)")}>
               <i className="ph-duotone ph-wallet" style={css("font-size:26px;color:var(--ink-tertiary)")} />
-              <span style={css("font-size:13px;color:var(--ink-secondary)")}>No bill split for this trip — everyone covers their own. The creator can switch it on above.</span>
+              <span style={css("font-size:13px;color:var(--ink-secondary)")}>No bill split for this trip — everyone covers their own.{v.billCanEdit ? " Switch it on above." : ""}</span>
             </div>
           )}
+          </>)}
         </>
       )}
     </div>

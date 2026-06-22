@@ -22,18 +22,22 @@ export interface Group {
 }
 
 export interface PollOption {
+  /** Backing poll_options row id (used when voting). */
+  id?: string;
   t: string;
   v: string[];
 }
 
 export interface ChatMsg {
-  id: number;
+  id: string;
   from: string;
   type: MsgType;
   time?: string;
   text?: string;
   dur?: number;
   tint?: string;
+  /** Real uploaded image URL (photos) — falls back to a tint when absent. */
+  imageUrl?: string;
   reactions?: Record<string, string[]>;
   label?: string;
   c1?: string;
@@ -43,8 +47,9 @@ export interface ChatMsg {
   url?: string;
   question?: string;
   options?: PollOption[];
-  replyTo?: number;
+  replyTo?: string;
   edited?: boolean;
+  pinned?: boolean;
   /** Per-message send time (ms) for ephemeral photo countdowns. */
   _t0?: number;
 }
@@ -130,6 +135,8 @@ export type Sheet =
   | "pw"
   | "gif"
   | "poll"
+  | "invite"
+  | "notifs"
   | null;
 
 export type Screen = "auth" | "onboard" | "waiting" | "app";
@@ -145,10 +152,10 @@ export interface State {
   now: number;
   draft: string;
   msgs: ChatMsg[];
-  pinnedId: number | null;
-  replyToId: number | null;
-  msgMenu: number | null;
-  editMsgId: number | null;
+  pinnedId: string | null;
+  replyToId: string | null;
+  msgMenu: string | null;
+  editMsgId: string | null;
   editMsgText: string;
   profilePopup: string | null;
   peekX: number;
@@ -158,9 +165,18 @@ export interface State {
   boardPeriod: "week" | "month" | "year" | "all";
   tripView: "list" | "detail" | "history";
   selectedTrip: string;
+  /** Month offset for the calendar (0 = current month). */
+  calOffset: number;
   trips: TripPlan[];
   tripEditing: boolean;
   tripNameDraft: string;
+  /** New-hangout composer draft (real trip is created from this). */
+  hangout: { title: string; dest: string; date: string; notes: string; emoji: string; transport: string };
+  /** Add-a-date-option composer (trip voting). */
+  dateOptLabel: string;
+  dateOptDate: string;
+  /** Bill total composer (trip bill splitting). */
+  billTotalDraft: string;
   attachMenu: boolean;
   pollQ: string;
   pollOpts: string[];
@@ -173,6 +189,8 @@ export interface State {
   myQrSaved: boolean;
   chatMuted: boolean;
   gameMode: "dice" | "card" | "wheel";
+  /** Custom spin-wheel choices (user-written; not tied to members). */
+  wheelOptions: string[];
   dice1: number;
   dice2: number;
   rolling: boolean;
@@ -207,7 +225,7 @@ export interface State {
   newGroupEmoji: string;
   theme: "light" | "dark";
   lang: "en" | "th";
-  account: "approved" | "pending";
+  account: "approved" | "pending" | "rejected";
   joinRequests: JoinRequest[];
   toast: string | null;
 }

@@ -48,10 +48,20 @@ export function AuthScreen({ v }: { v: VM }) {
         <input value={v.authPass} onChange={v.onAuthPass} type="password" placeholder="Password" style={css(input)} />
       </div>
       {v.isLogin && (
-        <div style={css("text-align:right;margin-bottom:18px")}><span style={css("font-size:12.5px;color:var(--primary);font-weight:700;cursor:pointer")}>Forgot password?</span></div>
+        <div style={css("text-align:right;margin-bottom:18px")}><span onClick={v.forgotPassword} style={css("font-size:12.5px;color:var(--primary);font-weight:700;cursor:pointer")}>Forgot password?</span></div>
       )}
       {v.isRegister && <div style={css("height:18px")} />}
-      <button onClick={v.doAuth} style={css("width:100%;height:52px;border-radius:13px;border:0;background:var(--primary);color:#fff;font-weight:700;font-size:15.5px;font-family:'Sarabun',sans-serif;cursor:pointer;margin-bottom:16px")}>{v.authCta}</button>
+      {v.authError && (
+        <div style={css("display:flex;align-items:center;gap:8px;background:var(--error-bg);color:var(--error);font-size:12.5px;font-weight:600;padding:10px 13px;border-radius:11px;margin-bottom:12px")}>
+          <i className="ph-fill ph-warning-circle" style={css("font-size:16px")} /> {v.authError}
+        </div>
+      )}
+      {v.authNotice && (
+        <div style={css("display:flex;align-items:center;gap:8px;background:var(--primary-surface);color:var(--primary-deep);font-size:12.5px;font-weight:600;padding:10px 13px;border-radius:11px;margin-bottom:12px")}>
+          <i className="ph-fill ph-envelope" style={css("font-size:16px")} /> {v.authNotice}
+        </div>
+      )}
+      <button onClick={v.doAuth} disabled={v.authBusy} style={css(`width:100%;height:52px;border-radius:13px;border:0;background:var(--primary);color:#fff;font-weight:700;font-size:15.5px;font-family:'Sarabun',sans-serif;cursor:${v.authBusy ? "default" : "pointer"};opacity:${v.authBusy ? ".7" : "1"};margin-bottom:16px`)}>{v.authBusy ? "Please wait…" : v.authCta}</button>
       <div style={css("text-align:center;margin-bottom:26px;font-size:13px;color:var(--ink-tertiary)")}>{v.authSwitchText} <span onClick={v.toggleAuthMode} style={css("color:var(--primary);font-weight:700;cursor:pointer")}>{v.authSwitchCta}</span></div>
     </div>
   );
@@ -120,9 +130,13 @@ export function WaitingScreen({ v }: { v: VM }) {
         <i className="ph-duotone ph-hourglass-medium" style={css("font-size:48px;color:var(--primary)")} />
         <span style={css("position:absolute;right:-4px;bottom:-4px;width:34px;height:34px;border-radius:50%;background:var(--warning);border:3px solid var(--canvas);display:flex;align-items:center;justify-content:center")}><i className="ph-fill ph-clock" style={css("font-size:16px;color:#fff")} /></span>
       </div>
-      <div style={css("font-family:Trirong,serif;font-weight:600;font-size:24px;color:var(--ink);line-height:1.2;margin-bottom:10px")}>Waiting for admin approval</div>
-      <div style={css("font-size:14px;color:var(--ink-secondary);line-height:1.55;max-width:280px;margin-bottom:6px")}>Your request to join <b>{v.waitingGroupName}</b> was sent. An admin needs to approve you before you can see chats, trips and games.</div>
-      <div style={css("display:inline-flex;align-items:center;gap:6px;background:var(--warning-bg);color:#7A4900;font-size:12px;font-weight:700;padding:6px 13px;border-radius:9999px;margin-top:14px")}><span style={css("width:7px;height:7px;border-radius:50%;background:var(--warning);animation:pulse 1.5s ease-in-out infinite")} /> Status: Pending</div>
+      <div style={css("font-family:Trirong,serif;font-weight:600;font-size:24px;color:var(--ink);line-height:1.2;margin-bottom:10px")}>{v.isRejected ? "Request not approved" : "Waiting for admin approval"}</div>
+      <div style={css("font-size:14px;color:var(--ink-secondary);line-height:1.55;max-width:280px;margin-bottom:6px")}>{v.isRejected ? <>An admin declined your request to join <b>{v.waitingGroupName}</b>. Reach out to them if you think this was a mistake.</> : <>Your request to join <b>{v.waitingGroupName}</b> was sent. An admin needs to approve you before you can see chats, trips and games.</>}</div>
+      {v.isRejected ? (
+        <div style={css("display:inline-flex;align-items:center;gap:6px;background:var(--error-bg);color:var(--error);font-size:12px;font-weight:700;padding:6px 13px;border-radius:9999px;margin-top:14px")}><span style={css("width:7px;height:7px;border-radius:50%;background:var(--error)")} /> Status: Rejected</div>
+      ) : (
+        <div style={css("display:inline-flex;align-items:center;gap:6px;background:var(--warning-bg);color:#7A4900;font-size:12px;font-weight:700;padding:6px 13px;border-radius:9999px;margin-top:14px")}><span style={css("width:7px;height:7px;border-radius:50%;background:var(--warning);animation:pulse 1.5s ease-in-out infinite")} /> Status: Pending</div>
+      )}
       <div style={css("margin-top:40px;width:100%;max-width:300px;display:flex;flex-direction:column;gap:10px")}>
         <button onClick={v.backToAuth} style={css("width:100%;height:46px;border-radius:13px;border:1px solid var(--hairline);background:var(--canvas);color:var(--ink-secondary);font-weight:700;font-size:13.5px;font-family:'Sarabun',sans-serif;cursor:pointer")}>Back to login</button>
       </div>

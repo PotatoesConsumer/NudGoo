@@ -1,6 +1,8 @@
 import { css } from "@/lib/nudgoo/css";
 import type { VM } from "@/lib/nudgoo/viewModel";
 
+import { GiphyPicker } from "./GiphyPicker";
+
 const closeBtn =
   "width:34px;height:34px;border-radius:11px;border:0;background:var(--surface-raised);display:flex;align-items:center;justify-content:center;cursor:pointer";
 const sheetTitle =
@@ -93,52 +95,38 @@ export function Overlays({ v }: { v: VM }) {
                     <span style={css(sheetTitle)}>{v.addSheetTitle}</span>
                     <button onClick={v.closeSheet} style={css(closeBtn)}><i className="ph-bold ph-x" style={css("font-size:16px;color:var(--ink-secondary)")} /></button>
                   </div>
-                  <div style={css("display:flex;flex-direction:column;gap:12px;margin-bottom:20px")}>
-                    <div style={css("display:flex;align-items:center;gap:10px;height:50px;padding:0 14px;border-radius:12px;background:var(--surface-raised)")}>
-                      <i className="ph ph-textbox" style={css("font-size:18px;color:var(--ink-tertiary)")} />
-                      {v.tripEditing ? (
-                        <input autoFocus value={v.tripNameDraft} onChange={v.onTripNameDraft} placeholder="Trip name" style={css("flex:1;border:0;background:transparent;outline:0;font-family:'Sarabun',sans-serif;font-size:14.5px;font-weight:600;color:var(--ink)")} />
-                      ) : (
-                        <span style={css("font-size:14.5px;color:var(--ink-tertiary)")}>What&apos;s the plan? e.g. Karaoke 🎤</span>
-                      )}
-                    </div>
-                    <div style={css("display:flex;gap:10px")}>
-                      <div style={css("flex:1;display:flex;align-items:center;gap:10px;height:50px;padding:0 14px;border-radius:12px;background:var(--surface-raised)")}><i className="ph ph-calendar-blank" style={css("font-size:18px;color:var(--ink-tertiary)")} /><span style={css("font-size:14.5px;color:var(--ink-tertiary)")}>Date</span></div>
-                      <div style={css("flex:1;display:flex;align-items:center;gap:10px;height:50px;padding:0 14px;border-radius:12px;background:var(--surface-raised)")}><i className="ph ph-clock" style={css("font-size:18px;color:var(--ink-tertiary)")} /><span style={css("font-size:14.5px;color:var(--ink-tertiary)")}>Time</span></div>
-                    </div>
-                    <div style={css("display:flex;align-items:center;gap:10px;height:50px;padding:0 14px;border-radius:12px;background:var(--surface-raised)")}><i className="ph ph-map-pin" style={css("font-size:18px;color:var(--ink-tertiary)")} /><span style={css("font-size:14.5px;color:var(--ink-tertiary)")}>Where at?</span></div>
-                  </div>
-                  <div style={css("font-size:11px;font-weight:700;color:var(--ink-tertiary);letter-spacing:.5px;margin:0 2px 8px;font-family:Inter,sans-serif")}>TRIP OPTIONS</div>
-                  <div style={css("background:var(--surface-raised);border-radius:14px;padding:4px 14px;margin-bottom:14px")}>
-                    <div style={css("display:flex;align-items:center;gap:11px;padding:13px 0;border-bottom:1px solid var(--hairline-soft)")}>
-                      <i className="ph ph-eye-closed" style={css("font-size:19px;color:var(--ink-secondary)")} />
-                      <div style={css("flex:1")}><div style={css("font-size:14px;font-weight:600;color:var(--ink)")}>Blind vote</div><div style={css("font-size:11px;color:var(--ink-tertiary)")}>Hide who voted &amp; tallies until voting closes</div></div>
-                      <Toggle track={v.blindTrack} knob={v.blindKnob} onClick={v.toggleBlindVote} label="toggle blind vote" />
-                    </div>
-                    <div style={css("display:flex;align-items:center;gap:11px;padding:13px 0;border-bottom:1px solid var(--hairline-soft)")}>
-                      <i className="ph ph-receipt" style={css("font-size:19px;color:var(--ink-secondary)")} />
-                      <div style={css("flex:1")}><div style={css("font-size:14px;font-weight:600;color:var(--ink)")}>Split the bill</div><div style={css("font-size:11px;color:var(--ink-tertiary)")}>Collect money from the gang for this trip</div></div>
-                      <Toggle track={v.billTrack} knob={v.billKnob} onClick={v.toggleBillSplit} label="toggle create bill split" />
-                    </div>
-                    {v.billSplitEnabled && (
-                      <div style={css("padding:13px 0")}>
-                        <div style={css("display:flex;align-items:center;gap:8px;margin-bottom:9px")}><i className="ph ph-wallet" style={css("font-size:17px;color:var(--ink-secondary)")} /><span style={css("font-size:13px;font-weight:600;color:var(--ink)")}>Treasurer</span></div>
-                        <div style={css("display:flex;flex-wrap:wrap;gap:7px")}>
-                          {v.treasurerChoices.map((t) => (
-                            <button key={t.id} onClick={t.onPick} style={css(`flex:0 0 auto;display:flex;align-items:center;gap:7px;height:38px;padding:0 12px 0 7px;border-radius:9999px;cursor:pointer;background:${t.bg};border:${t.border}`)}>
-                              <span style={css(`width:26px;height:26px;border-radius:50%;background:${t.color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:Inter,sans-serif`)}>{t.initial}</span>
-                              <span style={css(`font-size:13px;font-weight:600;color:${t.fg};white-space:nowrap`)}>{t.name}</span>
-                            </button>
-                          ))}
-                        </div>
-                        <div style={css("font-size:11px;color:var(--ink-tertiary);margin-top:8px;display:flex;align-items:center;gap:5px")}><i className="ph ph-qr-code" style={css("font-size:13px")} /> Their saved PromptPay QR will be shown to everyone.</div>
+                  {(
+                    <>
+                      <div style={css("font-size:11px;font-weight:700;color:var(--ink-tertiary);letter-spacing:.4px;margin:0 2px 9px;font-family:Inter,sans-serif")}>PICK AN ICON</div>
+                      <div style={css("display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px")}>
+                        {v.hangoutEmojiChoices.map((e) => (
+                          <button key={e.em} onClick={e.onTap} style={css(`width:44px;height:44px;border-radius:12px;cursor:pointer;background:${e.bg};border:${e.border};font-size:21px;display:flex;align-items:center;justify-content:center`)}>{e.em}</button>
+                        ))}
                       </div>
-                    )}
-                  </div>
-                  <div style={css("display:flex;align-items:center;gap:10px;padding:13px 14px;border-radius:12px;background:var(--primary-surface);margin-bottom:20px")}>
-                    <i className="ph-fill ph-lightbulb" style={css("font-size:18px;color:var(--primary)")} />
-                    <span style={css("font-size:12.5px;color:var(--primary-deep);font-weight:500")}>Not sure on a date? Add a few options and let the gang vote.</span>
-                  </div>
+                      <div style={css("display:flex;flex-direction:column;gap:11px;margin-bottom:20px")}>
+                        <div style={css("display:flex;align-items:center;gap:10px;height:50px;padding:0 14px;border-radius:12px;background:var(--surface-raised)")}>
+                          <i className="ph ph-textbox" style={css("font-size:18px;color:var(--ink-tertiary)")} />
+                          <input value={v.hangoutTitle} onChange={v.onHangoutTitle} placeholder="What's the plan? e.g. Karaoke 🎤" style={css("flex:1;border:0;background:transparent;outline:0;font-family:'Sarabun',sans-serif;font-size:14.5px;color:var(--ink)")} />
+                        </div>
+                        <div style={css("display:flex;align-items:center;gap:10px;height:50px;padding:0 14px;border-radius:12px;background:var(--surface-raised)")}>
+                          <i className="ph ph-map-pin" style={css("font-size:18px;color:var(--ink-tertiary)")} />
+                          <input value={v.hangoutDest} onChange={v.onHangoutDest} placeholder="Where at?" style={css("flex:1;border:0;background:transparent;outline:0;font-family:'Sarabun',sans-serif;font-size:14.5px;color:var(--ink)")} />
+                        </div>
+                        <div style={css("display:flex;align-items:center;gap:10px;height:50px;padding:0 14px;border-radius:12px;background:var(--surface-raised)")}>
+                          <i className="ph ph-calendar-blank" style={css("font-size:18px;color:var(--ink-tertiary)")} />
+                          <input value={v.hangoutDate} onChange={v.onHangoutDate} type="date" style={css("flex:1;border:0;background:transparent;outline:0;font-family:'Sarabun',sans-serif;font-size:14.5px;color:var(--ink)")} />
+                        </div>
+                        <div style={css("display:flex;align-items:center;gap:10px;height:50px;padding:0 14px;border-radius:12px;background:var(--surface-raised)")}>
+                          <i className="ph ph-car-profile" style={css("font-size:18px;color:var(--ink-tertiary)")} />
+                          <input value={v.hangoutTransport} onChange={v.onHangoutTransport} placeholder="Getting there (e.g. 2 cars · BTS)" style={css("flex:1;border:0;background:transparent;outline:0;font-family:'Sarabun',sans-serif;font-size:14.5px;color:var(--ink)")} />
+                        </div>
+                        <div style={css("display:flex;align-items:flex-start;gap:10px;min-height:50px;padding:12px 14px;border-radius:12px;background:var(--surface-raised)")}>
+                          <i className="ph ph-note" style={css("font-size:18px;color:var(--ink-tertiary)")} />
+                          <textarea value={v.hangoutNotes} onChange={v.onHangoutNotes} placeholder="Notes (optional)" rows={2} style={css("flex:1;border:0;background:transparent;outline:0;resize:none;font-family:'Sarabun',sans-serif;font-size:14.5px;color:var(--ink)")} />
+                        </div>
+                      </div>
+                    </>
+                  )}
                   <button onClick={v.onAddSubmit} style={css("width:100%;height:50px;border-radius:13px;border:0;background:var(--primary);color:#fff;font-weight:700;font-size:15.5px;font-family:'Sarabun',sans-serif;cursor:pointer")}>{v.addSheetCta}</button>
                 </>
               )}
@@ -218,27 +206,8 @@ export function Overlays({ v }: { v: VM }) {
                 </>
               )}
 
-              {/* GIF PICKER */}
-              {v.isGifSheet && (
-                <>
-                  <div style={css("display:flex;align-items:center;justify-content:space-between;margin-bottom:14px")}>
-                    <span style={css(sheetTitle)}>Send a GIF</span>
-                    <button onClick={v.closeSheet} style={css(closeBtn)}><i className="ph-bold ph-x" style={css("font-size:16px;color:var(--ink-secondary)")} /></button>
-                  </div>
-                  <div style={css("display:flex;align-items:center;height:46px;padding:0 14px;border-radius:12px;background:var(--surface-raised);margin-bottom:16px")}>
-                    <i className="ph ph-magnifying-glass" style={css("font-size:17px;color:var(--ink-tertiary);margin-right:9px")} />
-                    <span style={css("font-size:14px;color:var(--ink-tertiary)")}>Search GIPHY…</span>
-                  </div>
-                  <div style={css("display:grid;grid-template-columns:1fr 1fr;gap:10px")}>
-                    {v.gifGrid.map((g) => (
-                      <button key={g.id} onClick={g.onTap} style={css(`height:96px;border-radius:13px;border:0;cursor:pointer;overflow:hidden;position:relative;background:linear-gradient(135deg,${g.c1},${g.c2});display:flex;align-items:center;justify-content:center;padding:0`)}>
-                        <span style={css("font-family:Inter,sans-serif;font-weight:800;font-size:17px;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.3);text-align:center;padding:0 8px")}>{g.label}</span>
-                        <span style={css("position:absolute;left:6px;top:6px;background:rgba(0,0,0,.55);color:#fff;font-size:8px;font-weight:800;letter-spacing:.5px;padding:2px 5px;border-radius:4px;font-family:Inter,sans-serif")}>GIF</span>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
+              {/* GIF SEARCH */}
+              {v.isGifSheet && <GiphyPicker v={v} />}
 
               {/* POLL COMPOSER */}
               {v.isPollSheet && (
@@ -268,6 +237,51 @@ export function Overlays({ v }: { v: VM }) {
                   <button onClick={v.sendPoll} disabled={v.pollDisabled} style={css(`width:100%;height:50px;border-radius:13px;border:0;background:${v.pollBtnBg};color:#fff;font-weight:700;font-size:15.5px;font-family:'Sarabun',sans-serif;cursor:pointer`)}>Post poll</button>
                 </>
               )}
+
+              {/* INVITE */}
+              {v.isInviteSheet && (
+                <>
+                  <div style={css("display:flex;align-items:center;justify-content:space-between;margin-bottom:6px")}>
+                    <span style={css(sheetTitle)}>Invite the gang</span>
+                    <button onClick={v.closeSheet} style={css(closeBtn)}><i className="ph-bold ph-x" style={css("font-size:16px;color:var(--ink-secondary)")} /></button>
+                  </div>
+                  <div style={css("font-size:12.5px;color:var(--ink-tertiary);margin-bottom:18px;line-height:1.5")}>Share this code. Friends sign up, enter it on the &ldquo;Join a group&rdquo; screen, then an admin approves them.</div>
+                  <div style={css("font-size:11px;font-weight:700;color:var(--ink-tertiary);letter-spacing:.5px;text-align:center;margin-bottom:10px;font-family:Inter,sans-serif")}>YOUR GROUP&apos;S JOIN CODE</div>
+                  <button onClick={v.copyInviteCode} aria-label="copy code" style={css("display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:20px 0;border-radius:16px;border:1.5px dashed var(--primary);background:var(--primary-surface);cursor:pointer;margin-bottom:14px")}>
+                    <span style={css("font-family:Inter,sans-serif;font-weight:800;font-size:32px;letter-spacing:6px;color:var(--primary-deep)")}>{v.inviteCode}</span>
+                    <i className="ph-bold ph-copy" style={css("font-size:20px;color:var(--primary)")} />
+                  </button>
+                  <button onClick={v.copyInvite} style={css("display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:50px;border-radius:13px;border:0;background:var(--primary);color:#fff;font-weight:700;font-size:15px;font-family:'Sarabun',sans-serif;cursor:pointer")}><i className="ph-bold ph-share-network" style={css("font-size:18px")} /> Copy code + link</button>
+                </>
+              )}
+
+              {/* NOTIFICATIONS */}
+              {v.isNotifsSheet && (
+                <>
+                  <div style={css("display:flex;align-items:center;justify-content:space-between;margin-bottom:16px")}>
+                    <span style={css(sheetTitle)}>Notifications</span>
+                    <button onClick={v.closeSheet} style={css(closeBtn)}><i className="ph-bold ph-x" style={css("font-size:16px;color:var(--ink-secondary)")} /></button>
+                  </div>
+                  {v.notifIsAdmin && v.hasPending && (
+                    <div style={css("display:flex;flex-direction:column;gap:10px")}>
+                      {v.pendingRequests.map((r) => (
+                        <div key={r.id} style={css("display:flex;align-items:center;gap:11px;padding:12px 14px;border-radius:14px;background:var(--surface-raised)")}>
+                          <span style={css(`flex:0 0 40px;width:40px;height:40px;border-radius:50%;background:${r.bg};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-family:Inter,sans-serif;font-size:15px`)}>{r.initial}</span>
+                          <div style={css("flex:1;min-width:0")}><div style={css("font-weight:600;font-size:14px;color:var(--ink)")}>{r.name}</div><div style={css("font-size:11.5px;color:var(--ink-tertiary)")}>wants to join</div></div>
+                          <button onClick={r.onReject} aria-label="reject" style={css("flex:0 0 36px;width:36px;height:36px;border-radius:10px;border:1px solid var(--hairline);background:var(--canvas);display:flex;align-items:center;justify-content:center;cursor:pointer")}><i className="ph-bold ph-x" style={css("font-size:15px;color:var(--error)")} /></button>
+                          <button onClick={r.onApprove} aria-label="approve" style={css("flex:0 0 36px;width:36px;height:36px;border-radius:10px;border:0;background:var(--profit);display:flex;align-items:center;justify-content:center;cursor:pointer")}><i className="ph-bold ph-check" style={css("font-size:15px;color:#fff")} /></button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {!(v.notifIsAdmin && v.hasPending) && (
+                    <div style={css("display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 16px")}>
+                      <i className="ph-duotone ph-bell-slash" style={css("font-size:40px;color:var(--ink-tertiary);margin-bottom:12px")} />
+                      <div style={css("font-size:13.5px;color:var(--ink-secondary)")}>You&apos;re all caught up — nothing new right now.</div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </>
@@ -285,12 +299,14 @@ export function Overlays({ v }: { v: VM }) {
             <div style={css("padding:13px 16px;border-bottom:1px solid var(--hairline-soft);font-size:12.5px;color:var(--ink-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{v.menuText}</div>
             <button onClick={v.menuReply} style={css("display:flex;align-items:center;gap:13px;width:100%;border:0;background:transparent;cursor:pointer;padding:14px 16px;border-bottom:1px solid var(--hairline-soft)")}><i className="ph ph-arrow-bend-up-left" style={css("font-size:19px;color:var(--ink-secondary)")} /><span style={css("font-size:14.5px;font-weight:600;color:var(--ink)")}>Reply</span></button>
             <button onClick={v.menuPin} style={css("display:flex;align-items:center;gap:13px;width:100%;border:0;background:transparent;cursor:pointer;padding:14px 16px;border-bottom:1px solid var(--hairline-soft)")}><i className="ph ph-push-pin" style={css("font-size:19px;color:var(--ink-secondary)")} /><span style={css("font-size:14.5px;font-weight:600;color:var(--ink)")}>{v.menuPinLabel}</span></button>
-            {v.menuMine && (
+            {v.menuMine && v.menuIsText && (
               <>
                 <button onClick={v.menuCopy} style={css("display:flex;align-items:center;gap:13px;width:100%;border:0;background:transparent;cursor:pointer;padding:14px 16px;border-bottom:1px solid var(--hairline-soft)")}><i className="ph ph-copy" style={css("font-size:19px;color:var(--ink-secondary)")} /><span style={css("font-size:14.5px;font-weight:600;color:var(--ink)")}>Copy</span></button>
                 <button onClick={v.menuEdit} style={css("display:flex;align-items:center;gap:13px;width:100%;border:0;background:transparent;cursor:pointer;padding:14px 16px;border-bottom:1px solid var(--hairline-soft)")}><i className="ph ph-pencil-simple" style={css("font-size:19px;color:var(--ink-secondary)")} /><span style={css("font-size:14.5px;font-weight:600;color:var(--ink)")}>Edit</span></button>
-                <button onClick={v.menuDelete} style={css("display:flex;align-items:center;gap:13px;width:100%;border:0;background:transparent;cursor:pointer;padding:14px 16px")}><i className="ph ph-trash" style={css("font-size:19px;color:var(--error)")} /><span style={css("font-size:14.5px;font-weight:600;color:var(--error)")}>Delete</span></button>
               </>
+            )}
+            {v.menuMine && (
+              <button onClick={v.menuDelete} style={css("display:flex;align-items:center;gap:13px;width:100%;border:0;background:transparent;cursor:pointer;padding:14px 16px")}><i className="ph ph-trash" style={css("font-size:19px;color:var(--error)")} /><span style={css("font-size:14.5px;font-weight:600;color:var(--error)")}>Delete</span></button>
             )}
           </div>
         </div>

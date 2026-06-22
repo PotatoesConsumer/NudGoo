@@ -30,11 +30,20 @@ export function NudGooApp() {
         <div className="ng-screen" style={css(v.themeVars)}>
           <StatusBar />
 
-          {v.isAuth && <AuthScreen v={v} />}
-          {v.isOnboard && <OnboardScreen v={v} />}
-          {v.isWaiting && <WaitingScreen v={v} />}
+          {!v.authReady && (
+            <div style={css("flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:var(--canvas)")}>
+              <div style={css("width:64px;height:64px;border-radius:20px;background:var(--primary);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 26px rgba(59,91,219,.4)")}>
+                <i className="ph-fill ph-hand-peace" style={css("font-size:34px;color:#fff")} />
+              </div>
+              <div style={css("width:26px;height:26px;border:3px solid var(--hairline);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite")} />
+            </div>
+          )}
 
-          {v.inApp && (
+          {v.authReady && v.isAuth && <AuthScreen v={v} />}
+          {v.authReady && v.isOnboard && <OnboardScreen v={v} />}
+          {v.authReady && v.isWaiting && <WaitingScreen v={v} />}
+
+          {v.authReady && v.inApp && (
             <>
               <TopBar v={v} />
               <div style={css("flex:1;position:relative;overflow:hidden;display:flex;flex-direction:column;background:var(--surface)")}>

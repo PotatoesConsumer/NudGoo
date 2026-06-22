@@ -34,7 +34,7 @@ export function BoardScreen({ v }: { v: VM }) {
           <span style={css("position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:22px")}>👑</span>
         </div>
         <div style={css("flex:1;min-width:0;position:relative")}>
-          <div style={css("font-size:11px;font-weight:700;letter-spacing:.5px;color:rgba(255,255,255,.75);font-family:Inter,sans-serif;text-transform:uppercase")}>#1 this week</div>
+          <div style={css("font-size:11px;font-weight:700;letter-spacing:.5px;color:rgba(255,255,255,.75);font-family:Inter,sans-serif;text-transform:uppercase")}>#1 · {v.boardSub}</div>
           <div style={css("font-family:Trirong,serif;font-weight:600;font-size:21px;color:#fff;line-height:1.1;margin-top:1px")}>{v.champion.name}</div>
           <div style={css("font-size:12.5px;color:rgba(255,255,255,.85);margin-top:2px")}>{v.champion.caption}</div>
         </div>
@@ -50,6 +50,12 @@ export function BoardScreen({ v }: { v: VM }) {
             <span style={css(`flex:0 0 28px;width:28px;height:28px;border-radius:50%;background:${r.medalBg};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;font-family:Inter,sans-serif`)}>{r.rank}</span>
             <span style={css(`flex:0 0 36px;width:36px;height:36px;border-radius:50%;background:${r.bg};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;font-family:Inter,sans-serif`)}>{r.initial}</span>
             <span style={css("flex:1;font-weight:600;font-size:14.5px;color:var(--ink)")}>{r.name}</span>
+            {r.canAward && (
+              <span style={css("display:flex;align-items:center;gap:4px;margin-right:4px")}>
+                <button onClick={r.subPts} aria-label="subtract" style={css("width:26px;height:26px;border-radius:8px;border:1px solid var(--hairline);background:var(--canvas);display:flex;align-items:center;justify-content:center;cursor:pointer")}><i className="ph-bold ph-minus" style={css("font-size:12px;color:var(--ink-secondary)")} /></button>
+                <button onClick={r.addPts} aria-label="add" style={css("width:26px;height:26px;border-radius:8px;border:0;background:var(--primary);display:flex;align-items:center;justify-content:center;cursor:pointer")}><i className="ph-bold ph-plus" style={css("font-size:12px;color:#fff")} /></button>
+              </span>
+            )}
             <span style={css("font-family:Inter,sans-serif;font-weight:700;font-size:16px;color:var(--ink);font-variant-numeric:tabular-nums")}>{r.value}</span>
             <span style={css("font-size:11px;color:var(--ink-tertiary);min-width:48px")}>{r.unit}</span>
           </div>

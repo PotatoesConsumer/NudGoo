@@ -54,9 +54,29 @@ export function GamesScreen({ v }: { v: VM }) {
             </div>
             <div style={css("position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;z-index:3")}><i className="ph-fill ph-hand-peace" style={css("font-size:24px;color:var(--primary)")} /></div>
           </div>
-          <div style={css("font-size:12px;color:var(--ink-tertiary)")}>{v.hasWheelResult ? "The wheel picked" : "Spin to pick someone"}</div>
-          {v.hasWheelResult && <div style={css("font-family:Trirong,serif;font-weight:600;font-size:24px;color:var(--ink);margin-top:2px")}>{v.wheelResult}</div>}
-          <button onClick={v.spinWheel} disabled={v.wheelSpinning} style={css("display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:52px;border-radius:14px;border:0;cursor:pointer;background:var(--primary);color:#fff;font-weight:700;font-size:15.5px;font-family:'Sarabun',sans-serif;margin-top:18px")}><i className="ph-fill ph-pie-slice" style={css("font-size:19px")} /> {v.wheelSpinning ? "Spinning…" : "Spin the wheel"}</button>
+          <div style={css("font-size:12px;color:var(--ink-tertiary)")}>{v.hasWheelResult ? "The wheel picked" : v.wheelHasItems ? "Spin to pick one" : "Add options below to spin"}</div>
+          {v.hasWheelResult && <div style={css("font-family:Trirong,serif;font-weight:600;font-size:24px;color:var(--ink);margin-top:2px;text-align:center")}>{v.wheelResult}</div>}
+          <button onClick={v.spinWheel} disabled={!v.wheelCanSpin} style={css(`display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:52px;border-radius:14px;border:0;cursor:${v.wheelCanSpin ? "pointer" : "default"};background:var(--primary);color:#fff;font-weight:700;font-size:15.5px;font-family:'Sarabun',sans-serif;margin-top:18px;opacity:${v.wheelCanSpin ? "1" : ".5"}`)}><i className="ph-fill ph-pie-slice" style={css("font-size:19px")} /> {v.wheelSpinning ? "Spinning…" : "Spin the wheel"}</button>
+
+          <div style={css("width:100%;border-top:1px solid var(--hairline-soft);margin-top:20px;padding-top:16px")}>
+            <div style={css("display:flex;align-items:center;justify-content:space-between;margin-bottom:11px")}>
+              <span style={css("font-size:11px;font-weight:700;color:var(--ink-tertiary);letter-spacing:.4px;font-family:Inter,sans-serif")}>WHEEL OPTIONS</span>
+              <button onClick={v.addEveryoneToWheel} style={css("display:inline-flex;align-items:center;gap:5px;border:0;background:var(--surface-raised);cursor:pointer;font-size:11.5px;font-weight:700;color:var(--primary);padding:6px 11px;border-radius:9999px;font-family:'Sarabun',sans-serif")}><i className="ph-bold ph-users" style={css("font-size:13px")} /> Add everyone</button>
+            </div>
+            <div style={css("display:flex;flex-direction:column;gap:9px;margin-bottom:12px")}>
+              {v.wheelOptionRows.map((o) => (
+                <div key={o.key} style={css("display:flex;align-items:center;gap:8px;height:46px;padding:0 6px 0 14px;border-radius:12px;background:var(--surface-raised)")}>
+                  <input value={o.val} onChange={o.onInput} placeholder={`Option ${o.idx + 1}`} style={css("flex:1;border:0;background:transparent;outline:0;font-family:'Sarabun',sans-serif;font-size:14.5px;color:var(--ink)")} />
+                  {o.canRemove && (
+                    <button onClick={o.onRemove} aria-label="remove option" style={css("flex:0 0 32px;width:32px;height:32px;border-radius:9px;border:0;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer")}><i className="ph ph-minus-circle" style={css("font-size:18px;color:var(--ink-tertiary)")} /></button>
+                  )}
+                </div>
+              ))}
+            </div>
+            {v.canAddWheelOption && (
+              <button onClick={v.addWheelOption} style={css("display:flex;align-items:center;gap:7px;border:0;background:transparent;cursor:pointer;font-family:'Sarabun',sans-serif;font-weight:700;font-size:13.5px;color:var(--primary)")}><i className="ph-bold ph-plus" style={css("font-size:15px")} /> Add option</button>
+            )}
+          </div>
         </div>
       )}
 

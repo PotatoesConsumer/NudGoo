@@ -64,7 +64,7 @@ export function GroupSettingsScreen({ v }: { v: VM }) {
 
       <div style={css("display:flex;align-items:center;justify-content:space-between;margin:0 4px 8px")}>
         <span style={css("font-size:11px;font-weight:700;color:var(--ink-tertiary);letter-spacing:.5px;font-family:Inter,sans-serif")}>MEMBERS · {v.gsMemberCount}</span>
-        <span style={css("display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--primary)")}><i className="ph-bold ph-user-plus" style={css("font-size:14px")} /> Invite</span>
+        <button onClick={v.openInvite} style={css("display:inline-flex;align-items:center;gap:4px;border:0;background:transparent;cursor:pointer;font-size:11px;font-weight:700;color:var(--primary);font-family:'Sarabun',sans-serif")}><i className="ph-bold ph-user-plus" style={css("font-size:14px")} /> Invite</button>
       </div>
       <div style={css("background:var(--canvas);border-radius:16px;padding:4px 14px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:22px")}>
         {v.members.map((m) => (

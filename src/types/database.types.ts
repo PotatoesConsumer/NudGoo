@@ -31,6 +31,12 @@ export interface Database {
           status: Database["public"]["Enums"]["member_status"];
           points: number;
           created_at: string;
+          username: string | null;
+          phone: string | null;
+          nickname: string | null;
+          avatar_color: string;
+          avatar_emoji: string | null;
+          promptpay_handle: string | null;
         };
         Insert: {
           id: string;
@@ -40,6 +46,12 @@ export interface Database {
           status?: Database["public"]["Enums"]["member_status"];
           points?: number;
           created_at?: string;
+          username?: string | null;
+          phone?: string | null;
+          nickname?: string | null;
+          avatar_color?: string;
+          avatar_emoji?: string | null;
+          promptpay_handle?: string | null;
         };
         Update: {
           id?: string;
@@ -49,6 +61,12 @@ export interface Database {
           status?: Database["public"]["Enums"]["member_status"];
           points?: number;
           created_at?: string;
+          username?: string | null;
+          phone?: string | null;
+          nickname?: string | null;
+          avatar_color?: string;
+          avatar_emoji?: string | null;
+          promptpay_handle?: string | null;
         };
         Relationships: [];
       };
@@ -58,18 +76,33 @@ export interface Database {
           user_id: string;
           content: string;
           created_at: string;
+          type: string;
+          reply_to: string | null;
+          edited: boolean;
+          pinned: boolean;
+          meta: Json | null;
         };
         Insert: {
           id?: string;
           user_id: string;
-          content: string;
+          content?: string;
           created_at?: string;
+          type?: string;
+          reply_to?: string | null;
+          edited?: boolean;
+          pinned?: boolean;
+          meta?: Json | null;
         };
         Update: {
           id?: string;
           user_id?: string;
           content?: string;
           created_at?: string;
+          type?: string;
+          reply_to?: string | null;
+          edited?: boolean;
+          pinned?: boolean;
+          meta?: Json | null;
         };
         Relationships: [
           {
@@ -92,6 +125,13 @@ export interface Database {
           status: Database["public"]["Enums"]["trip_status"];
           created_by: string;
           created_at: string;
+          emoji: string;
+          transport: string | null;
+          notes: string | null;
+          blind_vote: boolean;
+          bill_split_enabled: boolean;
+          treasurer_id: string | null;
+          total_amount: number | null;
         };
         Insert: {
           id?: string;
@@ -104,6 +144,13 @@ export interface Database {
           status?: Database["public"]["Enums"]["trip_status"];
           created_by: string;
           created_at?: string;
+          emoji?: string;
+          transport?: string | null;
+          notes?: string | null;
+          blind_vote?: boolean;
+          bill_split_enabled?: boolean;
+          treasurer_id?: string | null;
+          total_amount?: number | null;
         };
         Update: {
           id?: string;
@@ -116,6 +163,13 @@ export interface Database {
           status?: Database["public"]["Enums"]["trip_status"];
           created_by?: string;
           created_at?: string;
+          emoji?: string;
+          transport?: string | null;
+          notes?: string | null;
+          blind_vote?: boolean;
+          bill_split_enabled?: boolean;
+          treasurer_id?: string | null;
+          total_amount?: number | null;
         };
         Relationships: [
           {
@@ -241,6 +295,7 @@ export interface Database {
           points: number;
           reason: string;
           created_at: string;
+          category: string;
         };
         Insert: {
           id?: string;
@@ -248,6 +303,7 @@ export interface Database {
           points: number;
           reason: string;
           created_at?: string;
+          category?: string;
         };
         Update: {
           id?: string;
@@ -255,6 +311,7 @@ export interface Database {
           points?: number;
           reason?: string;
           created_at?: string;
+          category?: string;
         };
         Relationships: [
           {
@@ -265,12 +322,91 @@ export interface Database {
           },
         ];
       };
+      trip_date_options: {
+        Row: { id: string; trip_id: string; label: string; subtitle: string | null; option_date: string | null; created_at: string };
+        Insert: { id?: string; trip_id: string; label: string; subtitle?: string | null; option_date?: string | null; created_at?: string };
+        Update: { id?: string; trip_id?: string; label?: string; subtitle?: string | null; option_date?: string | null; created_at?: string };
+        Relationships: [];
+      };
+      trip_date_votes: {
+        Row: { option_id: string; trip_id: string; user_id: string; created_at: string };
+        Insert: { option_id: string; trip_id: string; user_id: string; created_at?: string };
+        Update: { option_id?: string; trip_id?: string; user_id?: string; created_at?: string };
+        Relationships: [];
+      };
+      trip_photos: {
+        Row: { id: string; trip_id: string; user_id: string; image_url: string | null; tint: string | null; expires_at: string | null; created_at: string };
+        Insert: { id?: string; trip_id: string; user_id: string; image_url?: string | null; tint?: string | null; expires_at?: string | null; created_at?: string };
+        Update: { id?: string; trip_id?: string; user_id?: string; image_url?: string | null; tint?: string | null; expires_at?: string | null; created_at?: string };
+        Relationships: [];
+      };
+      bill_payments: {
+        Row: { trip_id: string; user_id: string; paid: boolean; slip_url: string | null; updated_at: string };
+        Insert: { trip_id: string; user_id: string; paid?: boolean; slip_url?: string | null; updated_at?: string };
+        Update: { trip_id?: string; user_id?: string; paid?: boolean; slip_url?: string | null; updated_at?: string };
+        Relationships: [];
+      };
+      message_reactions: {
+        Row: { message_id: string; user_id: string; emoji: string; created_at: string };
+        Insert: { message_id: string; user_id: string; emoji: string; created_at?: string };
+        Update: { message_id?: string; user_id?: string; emoji?: string; created_at?: string };
+        Relationships: [];
+      };
+      poll_options: {
+        Row: { id: string; message_id: string; label: string; idx: number; created_at: string };
+        Insert: { id?: string; message_id: string; label: string; idx?: number; created_at?: string };
+        Update: { id?: string; message_id?: string; label?: string; idx?: number; created_at?: string };
+        Relationships: [];
+      };
+      poll_votes: {
+        Row: { option_id: string; user_id: string; created_at: string };
+        Insert: { option_id: string; user_id: string; created_at?: string };
+        Update: { option_id?: string; user_id?: string; created_at?: string };
+        Relationships: [];
+      };
+      group_rules: {
+        Row: { id: string; body: string; enabled: boolean; created_by: string | null; created_at: string };
+        Insert: { id?: string; body: string; enabled?: boolean; created_by?: string | null; created_at?: string };
+        Update: { id?: string; body?: string; enabled?: boolean; created_by?: string | null; created_at?: string };
+        Relationships: [];
+      };
+      mute_votes: {
+        Row: { target_id: string; voter_id: string; created_at: string };
+        Insert: { target_id: string; voter_id: string; created_at?: string };
+        Update: { target_id?: string; voter_id?: string; created_at?: string };
+        Relationships: [];
+      };
+      group_meta: {
+        Row: { id: number; invite_code: string; created_at: string };
+        Insert: { id?: number; invite_code?: string; created_at?: string };
+        Update: { id?: number; invite_code?: string; created_at?: string };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      group_claimed: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
+      claim_group: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
+      join_code_valid: {
+        Args: { code: string };
+        Returns: boolean;
+      };
+      is_member: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
+      is_admin: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
     };
     Enums: {
       user_role: "member" | "admin";
